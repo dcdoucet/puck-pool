@@ -99,8 +99,8 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 .okc{color:var(--good)}.noc{color:var(--bad)}
 .rules{padding-left:18px;margin:10px 0 4px;font-size:15px}.rules li{margin:6px 0}
 .done{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));width:100%;margin-top:8px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
-#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-150%);z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
-#toast.show{transform:translate(-50%,0)}
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-300%);opacity:0;visibility:hidden;z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s,opacity .25s,visibility .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+#toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
 @media(prefers-reduced-motion:reduce){#board{width:100%;display:block;border-radius:14px;margin:4px 0 10px;min-height:180px;background:var(--card)}
 .fh{font-size:17px;margin:22px 2px 6px}
@@ -274,6 +274,7 @@ document.addEventListener('submit',async e=>{
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button,[data-x="close"],h1[data-tab]');if(!b)return;const x=b.dataset.x;
   if(x==='close'){if(e.target===b){sheet=null;renderSheet()}return}
+  if(b.dataset.tab)sheet=null;
   if(b.dataset.tab&&!mine()){const pv=ls.get('pp_prev');if(pv&&P[pv]){save(pv);tab='home';render();scrollTo(0,0)}return}
   if(b.dataset.tab){tab=b.dataset.tab;open=null;render();scrollTo(0,0);return}
   if(b.dataset.claim){save(b.dataset.claim);sheet=null;tab='home';render();scrollTo(0,0);return}
