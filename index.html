@@ -29,6 +29,8 @@ tr.me td{font-weight:700}
 .out td{color:var(--mute)}
 .msg{background:var(--onbg);padding:10px 12px;border-radius:10px;margin:10px 0}
 .names button{display:block;width:100%;margin-top:6px;background:var(--onbg);color:var(--ink)}
+.lg{width:34px;height:34px;flex:none}
+.nm{display:flex;align-items:center;gap:10px}
 .done{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));width:100%;margin-top:8px;font-size:19px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .edit{width:100%;margin:6px 0 4px}
 </style></head><body><main>
@@ -76,6 +78,8 @@ async function post(msg){
   if(!r.ok)throw new Error(r.status);
   add(await r.json());build();
 }
+const dark=matchMedia('(prefers-color-scheme: dark)').matches;
+const logo=ab=>`<img class="lg" alt="" src="https://assets.nhle.com/logos/nhl/svg/${ab}_${dark?'dark':'light'}.svg" onerror="this.remove()">`;
 const fmt=n=>String(Math.round(n*10)/10);
 function tally(){
   // each game's pot = everyone who picked it; the people who got it right split the pot
@@ -98,19 +102,19 @@ function render(){
     const names=Object.entries(P);
     h+=choosing?`<div class="names"><p class="mute">Tap your name:</p>${names.map(([id,p])=>`<button data-claim="${esc(id)}">${esc(p.name)}</button>`).join('')}<p><button class="link" data-x="back">Back</button></p></div>`
     :`<form id="join"><input id="nick" maxlength="16" placeholder="Your name" autocomplete="off" required><button>Join</button></form>${names.length?'<p><button class="link" data-x="claim">Already joined on another phone?</button></p>':''}`;
-  }else h+=`<p>Picking as <b>${esc(mine.name)}</b> · <button class="link" data-x="out">Not you?</button> · <button class="link" data-x="del">Remove me</button></p>`;
+  }else h+=`<p><span>Picking as <b>${esc(mine.name)}</b> · <button class="link" data-x="out">Not you?</button> · <button class="link" data-x="del">Remove me</button></span></p>`;
   $('me').innerHTML=h;
   if(mine&&view==='pick'){
     $('view').innerHTML=G.map(g=>{
       const k=mine.picks[g.id],lk=locked(g),r=result(g),s=scores[g.id],sc=s&&!['FUT','PRE'].includes(s.state);
-      const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''}>${ab}${sc?` <small>${pts}</small>`:''}</button>`};
-      return `<div class="g">${b('A',g.a,s?.as)}${b('H','@ '+g.h,s?.hs)}</div>`}).join('')+'<button class="done" data-x="done">Done</button>';
+      const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''}>${logo(ab)}${side==='H'?'@ ':''}${ab}${sc?` <small>${pts}</small>`:''}</button>`};
+      return `<div class="g">${b('A',g.a,s?.as)}${b('H',g.h,s?.hs)}</div>`}).join('')+'<button class="done" data-x="done">Done</button>';
     return;
   }
   const T=tally(),ids=Object.keys(P),lead=Math.max(0,...ids.map(id=>T[id].pts));
   const rows=ids.map(id=>({id,p:P[id],...T[id]})).sort((a,b)=>b.pts-a.pts||b.max-a.max||a.p.name.localeCompare(b.p.name));
   $('view').innerHTML=(mine?'<button class="edit" data-x="edit">Edit picks</button>':'')+
-    `<table><thead><tr><th>Player</th><th>Pts</th><th>Max</th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr class="${r.id===me?'me':''} ${r.max<lead?'out':''}"><td>${esc(r.p.name)}${r.max<lead?' · out':''}</td><td>${fmt(r.pts)}</td><td>${fmt(r.max)}</td></tr>`).join(''):'<tr><td colspan="3" class="mute">No one yet.</td></tr>'}</tbody></table>
+    `<table><thead><tr><th>Player</th><th>Pts</th><th>Max</th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr class="${r.id===me?'me':''} ${r.max<lead?'out':''}"><td><span class="nm">${esc(r.p.name)}${r.max<lead?' · out':''}</span></td><td>${fmt(r.pts)}</td><td>${fmt(r.max)}</td></tr>`).join(''):'<tr><td colspan="3" class="mute">No one yet.</td></tr>'}</tbody></table>
     <p class="mute">Each game is worth one point per person who picked it, split among everyone who got it right. Max is the most you can still finish with. Picks lock when each game starts.</p>`;
 }
 document.addEventListener('submit',async e=>{
