@@ -53,7 +53,8 @@ function build(){
   P={};const list=[...ev.values()].sort((a,b)=>a.time-b.time);
   for(const e of list){let m;try{m=JSON.parse(e.message)}catch{continue}
     if(!m||typeof m.p!=='string')continue;
-    if(m.t==='j'&&m.n&&!P[m.p])P[m.p]={name:String(m.n).slice(0,16),picks:{}};
+    if(m.t==='x')delete P[m.p];
+    else if(m.t==='j'&&m.n&&!P[m.p])P[m.p]={name:String(m.n).slice(0,16),picks:{}};
     else if(m.t==='p'&&P[m.p]){const g=G.find(x=>x.id===m.g);if(g&&(m.s==='A'||m.s==='H')&&e.time*1000<g.t)P[m.p].picks[g.id]=m.s}}
 }
 const add=e=>{if(e&&e.id&&e.message)ev.set(e.id,e)};
@@ -97,7 +98,7 @@ function render(){
     const names=Object.entries(P);
     h+=choosing?`<div class="names"><p class="mute">Tap your name:</p>${names.map(([id,p])=>`<button data-claim="${esc(id)}">${esc(p.name)}</button>`).join('')}<p><button class="link" data-x="back">Back</button></p></div>`
     :`<form id="join"><input id="nick" maxlength="16" placeholder="Your name" autocomplete="off" required><button>Join</button></form>${names.length?'<p><button class="link" data-x="claim">Already joined on another phone?</button></p>':''}`;
-  }else h+=`<p>Picking as <b>${esc(mine.name)}</b> · <button class="link" data-x="out">Not you?</button></p>`;
+  }else h+=`<p>Picking as <b>${esc(mine.name)}</b> · <button class="link" data-x="out">Not you?</button> · <button class="link" data-x="del">Remove me</button></p>`;
   $('me').innerHTML=h;
   if(mine&&view==='pick'){
     $('view').innerHTML=G.map(g=>{
@@ -122,6 +123,11 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.x==='claim'){choosing=true;render()}
   else if(b.dataset.x==='back'){choosing=false;render()}
+  else if(b.dataset.x==='del'&&!busy){
+    if(!confirm('Remove '+P[me].name+' and all their picks?'))return;
+    busy=true;try{await post({t:'x',p:me});me=null;try{localStorage.removeItem('pp_me')}catch{};view=null;err=''}catch{err='Couldn’t remove, try again.'}
+    busy=false;render();
+  }
   else if(b.dataset.x==='done'){view='table';render();scrollTo(0,0)}
   else if(b.dataset.x==='edit'){view='pick';render();scrollTo(0,0)}
   else if(b.dataset.x==='out'){me=null;try{localStorage.removeItem('pp_me')}catch{};render()}

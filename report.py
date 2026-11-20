@@ -19,7 +19,8 @@ def players_from(events):
         try: m = json.loads(e["message"])
         except Exception: continue
         if not isinstance(m, dict) or not isinstance(m.get("p"), str): continue
-        if m.get("t") == "j" and m.get("n") and m["p"] not in P:
+        if m.get("t") == "x": P.pop(m["p"], None)
+        elif m.get("t") == "j" and m.get("n") and m["p"] not in P:
             P[m["p"]] = {"name": str(m["n"])[:16], "picks": {}}
         elif m.get("t") == "p" and m["p"] in P and m.get("g") in START and m.get("s") in ("A","H") and e["time"] < START[m["g"]]:
             P[m["p"]]["picks"][m["g"]] = m["s"]
