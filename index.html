@@ -99,6 +99,7 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 .okc{color:var(--good)}.noc{color:var(--bad)}
 .rules{padding-left:18px;margin:10px 0 4px;font-size:15px}.rules li{margin:6px 0}
 .done{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));width:100%;margin-top:8px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chips button{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:999px;padding:6px 14px 6px 8px;min-height:44px;font-weight:600}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-300%);opacity:0;visibility:hidden;z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s,opacity .25s,visibility .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
@@ -126,7 +127,7 @@ const TOPIC='puckpool-614c7aa1d6ed',LIVE=TOPIC+'-live',NT='https://ntfy.sh/'+TOP
 const ls={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}},del:k=>{try{localStorage.removeItem(k)}catch{}}};
 const TC={EDM:'#ff4c00',CAR:'#ce1126',CHI:'#cf0a2c',CGY:'#c8102e',BUF:'#0057b8',FLA:'#c8102e',PIT:'#fcb514',NSH:'#ffb81c',WSH:'#c8102e',BOS:'#ffb81c',CBJ:'#2a5fae',TOR:'#2f6fd8',PHI:'#f74902',MTL:'#af1e2d',LAK:'#a2aaad',OTT:'#c52032',NYI:'#f47d30',DET:'#ce1126',NJD:'#ce1126',STL:'#2f6fd8',VGK:'#b4975a',WPG:'#55a0e0',ANA:'#f47a38',UTA:'#6cace4',MIN:'#2e8b57',VAN:'#00843d',SEA:'#99d9d9',SJS:'#00a3ad'};
 let ev=new Map(),P={},base={},liveS={},S={},O={},seenAt={},me=ls.get('pp_me'),tab=null,busy=false,loaded=false,lastFull=0,open=null,sheet=null,err='';
-const save=id=>{me=id;ls.set('pp_me',id)};
+const save=id=>{me=id;ls.set('pp_me',id);ls.set('pp_prev',id)};
 const tm=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 const result=g=>PP.result(S,g),locked=g=>PP.started(S,g),mine=()=>me&&P[me];
 let joins=[];
@@ -180,16 +181,16 @@ function render(){
   if(loaded&&!tab)tab=m&&G.every(g=>locked(g)||m.picks[g.id])?'home':'pick';
   $('hdr').innerHTML=m?`<button class="me" data-x="menu" aria-label="Menu">${crest(teamOf(me,m).m,teamOf(me,m).kit,32)}</button>`:'';
   if(!loaded){$('main').innerHTML=`<p class="mute">${err||'Loading…'}</p>`;return}
-  if(!m){joinView();renderSheet();return}
+  if(!m){tab==='home'?homeView(null):joinView();renderSheet();return}
   tab==='pick'?pickView(m):homeView(m);
   renderSheet();
 }
 function joinView(){
-  const names=Object.entries(P);
+  const names=Object.entries(P).sort((x,y)=>x[1].name.localeCompare(y[1].name));
   $('main').innerHTML=`<div class="card" style="margin-top:8px"><h2 style="margin:4px 0 4px;font-size:22px">Join the pool</h2>
     <p class="mute" style="margin:0 0 12px">Saturday, Nov 21 · pick a winner in all 14 NHL games.</p>
-    <form id="join" style="display:flex;gap:8px"><input id="nick" maxlength="16" placeholder="Your name" autocomplete="off" required><button class="primary">Join</button></form></div>
-`;
+    <form id="join" style="display:flex;gap:8px"><input id="nick" maxlength="16" placeholder="New player name" autocomplete="off" required><button class="primary">Join</button></form></div>
+    ${names.length?`<div class="sec"><h2>Or play as</h2></div><div class="chips">${names.map(([id,p])=>{const t=teamOf(id,p);return `<button data-claim="${esc(id)}">${crest(t.m,t.kit,26)}${esc(p.name)}</button>`}).join('')}</div>`:''}`;
 }
 function status(g){const s=S[g.id];if(PP.isFinal(s))return 'Final'+(s.period>4?' · SO':s.period>3?' · OT':'');if(PP.isLive(s))return `<b>Live</b> · ${PP.per(s.period)} ${esc(s.clock||'')}`;return locked(g)?'Locked':''}
 function pickView(m){
@@ -213,14 +214,15 @@ function homeView(m){
   const rows=ids.map(id=>({id,...T[id],w:W[id]||0,b:A[id]||[]})).sort((a,b)=>b.pts-a.pts||b.w-a.w||b.max-a.max);
   const pct=w=>w>=.995&&w<1?'>99%':w>0&&w<.005?'<1%':Math.round(w*100)+'%';
   const ICON={fire:'🔥',fade:'👑',sheep:'🐑',bad:'💀',round:'🍺'};
-  const n=G.filter(g=>m.picks[g.id]).length,fin=G.filter(result).length,live=G.filter(g=>PP.isLive(S[g.id])).length;
+  const n=m?G.filter(g=>m.picks[g.id]).length:0,fin=G.filter(result).length,live=G.filter(g=>PP.isLive(S[g.id])).length;
   const mi=rows.findIndex(r=>r.id===me),mr=rows[mi];
   // hero: one big number
   let hero;
-  if(Date.now()<FIRST)hero=`<div class="big" id="cd">${left()}</div><div class="cap">until picks start locking</div>
+  if(!m)hero=`<div class="big" id="cd">${Date.now()<FIRST?left():PP.f1(lead)}</div><div class="cap">${Date.now()<FIRST?'until picks start locking':'points to beat'}</div><button class="primary pill" data-x="join">Join the pool</button>`;
+  else if(Date.now()<FIRST)hero=`<div class="big" id="cd">${left()}</div><div class="cap">until picks start locking</div>
     ${n<14?`<button class="primary pill" data-tab="pick">Make your picks · ${n}/14</button>`:`<div class="ok">✓ All 14 picked</div>`}`;
   else hero=`<div class="big">${mr&&mr.max<lead-1e-9?'Out':'#'+(mi+1)}</div><div class="cap">${PP.f1(mr?mr.pts:0)} pts · ${pct(mr?mr.w:0)} to win · ${fin===14?'Final':live?live+' live':fin+'/14 final'}</div>`;
-  hero+=`<div class="links">${n>=14||Date.now()>=FIRST?`<button class="lnk" data-tab="pick">${Date.now()>=FIRST?'Your picks':'Edit picks'}</button><span class="dim">·</span>`:''}<button class="lnk" data-x="rules">How it works</button></div>`;
+  if(m)hero+=`<div class="links">${n>=14||Date.now()>=FIRST?`<button class="lnk" data-tab="pick">${Date.now()>=FIRST?'Your picks':'Edit picks'}</button><span class="dim">·</span>`:''}<button class="lnk" data-x="rules">How it works</button></div>`;
   const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).sort((a,b)=>b.ts-a.ts).slice(0,3);
   $('main').innerHTML=`<div class="hero">${hero}</div>
     <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
@@ -275,7 +277,7 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('button,[data-x="close"],h1[data-tab]');if(!b)return;const x=b.dataset.x;
   if(x==='close'){if(e.target===b){sheet=null;renderSheet()}return}
   if(b.dataset.tab)sheet=null;
-  if(b.dataset.tab&&!mine()){const pv=ls.get('pp_prev');if(pv&&P[pv]){save(pv);tab='home';render();scrollTo(0,0)}return}
+  if(b.dataset.tab&&!mine()){const pv=ls.get('pp_prev');if(pv&&P[pv])save(pv);tab='home';render();scrollTo(0,0);return}
   if(b.dataset.tab){tab=b.dataset.tab;open=null;render();scrollTo(0,0);return}
   if(b.dataset.claim){save(b.dataset.claim);sheet=null;tab='home';render();scrollTo(0,0);return}
   if(b.dataset.pl){sheet='pl:'+b.dataset.pl;renderSheet();return}
@@ -286,6 +288,7 @@ document.addEventListener('click',async e=>{
   if(x==='rules'&&!mine())return;
   if(x==='out'){if(me)ls.set('pp_prev',me);sheet=null;me=null;ls.del('pp_me');tab=null;render();return}
   if(x==='share'){share();return}
+  if(x==='join'){tab='join';render();setTimeout(()=>$('nick')&&$('nick').focus(),50);return}
   if(x==='add'){if(me)ls.set('pp_prev',me);me=null;ls.del('pp_me');tab=null;sheet=null;render();setTimeout(()=>$('nick')&&$('nick').focus(),50);return}
   if(busy)return;
   if(x==='del'){if(!confirm('Remove '+P[me].name+' and all their picks?'))return;busy=true;
