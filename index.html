@@ -7,7 +7,7 @@
 @media(prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#1a1d23;--ink:#f3f4f6;--mute:#9ca3af;--line:#2a2e36;--acc:#5b8cff;--accbg:#1c2a4a;--good:#34d399;--bad:#f87171;--gold:#fbbf24}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
-header{position:sticky;top:0;z-index:10;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;justify-content:space-between;max-width:560px;margin:auto}
+header{position:sticky;top:0;z-index:10;background:var(--bg);padding:calc(8px + env(safe-area-inset-top)) 16px 8px;display:flex;align-items:center;justify-content:space-between;max-width:560px;margin:auto}
 header h1{font-size:20px;margin:0;font-weight:750;letter-spacing:-.01em}
 main{max-width:560px;margin:auto;padding:0 16px calc(96px + env(safe-area-inset-bottom))}
 button,input{font:inherit;color:inherit}
@@ -77,6 +77,27 @@ nav em{font-style:normal;font-size:12px;background:var(--line);color:var(--ink);
 .banner details{margin-top:4px;font-size:14px;color:var(--ink)}
 .banner summary{min-height:36px}
 .banner ul{margin:4px 0 4px;padding-left:18px}.banner li{margin:4px 0}
+.hero{text-align:center;padding:28px 0 8px}
+.hero .big{font-size:56px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.hero .cap{color:var(--mute);margin-top:8px;font-size:16px}
+.hero .pill{margin-top:18px;border-radius:999px;padding:0 24px}
+.hero .ok{margin-top:18px;color:var(--good);font-weight:650}
+.sec{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
+.sec h2{font-size:20px;margin:0;font-weight:750}
+.dim{color:var(--mute);font-weight:500}.acc{color:var(--acc)}
+.lnk{color:var(--acc);font-weight:650;min-height:44px}
+.list .lh,.list .p{display:grid;grid-template-columns:22px 32px 1fr 40px 44px 52px;gap:10px;align-items:center;padding:0 14px}
+.list .lh{grid-template-columns:1fr 40px 44px 52px;font-size:12px;color:var(--mute);font-weight:600;min-height:32px}
+.list .lh span{text-align:right}
+.list .p{min-height:60px;border-top:1px solid var(--line)}
+.list .p.mine{background:var(--accbg)}.list .p.out{opacity:.5}
+.list .rk{color:var(--mute);font-weight:650;text-align:center}
+.list .n{min-width:0;display:flex;flex-direction:column}.list .n b{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.list .n small{color:var(--mute);font-size:13px}
+.list .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}.list .v.dim{font-weight:500}
+.list .f{display:flex;justify-content:space-between;gap:12px;padding:14px;border-top:1px solid var(--line);font-size:15px}.list .f:first-child{border:0}
+.list .f time{flex:none;color:var(--mute);font-size:13px}
+.who{display:flex;align-items:center;gap:10px;padding:4px 0 10px}
+.rules{padding-left:18px;margin:10px 0 4px;font-size:15px}.rules li{margin:6px 0}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-150%);z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0)}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
@@ -157,9 +178,8 @@ let tt;function toast(t){const el=$('toast');el.textContent=t;el.classList.add('
 function render(){
   const m=mine();
   if(loaded&&!tab)tab=m&&G.every(g=>locked(g)||m.picks[g.id])?'home':'pick';
-  $('hdr').innerHTML=m?`<button class="me" data-x="menu" aria-label="Your team">${crest(teamOf(me,m).m,teamOf(me,m).kit,30)}${esc(m.name)}</button>`:'';
+  $('hdr').innerHTML=m?`<button class="me" data-x="menu" aria-label="Menu">${crest(teamOf(me,m).m,teamOf(me,m).kit,32)}</button>`:'';
   $('nav').hidden=!m;
-  document.querySelector('header h1').style.visibility=m&&tab==='home'?'hidden':'';
   if(m){$('tPick').classList.toggle('on',tab==='pick');$('tHome').classList.toggle('on',tab==='home');
     $('cnt').textContent=G.filter(g=>m.picks[g.id]).length+'/14'}
   if(!loaded){$('main').innerHTML=`<p class="mute">${err||'Loading…'}</p>`;return}
@@ -177,7 +197,8 @@ function joinView(){
 function status(g){const s=S[g.id];if(PP.isFinal(s))return 'Final'+(s.period>4?' · SO':s.period>3?' · OT':'');if(PP.isLive(s))return `<b>Live</b> · ${PP.per(s.period)} ${esc(s.clock||'')}`;return locked(g)?'Locked':''}
 function pickView(m){
   const frozen=m.lock&&locked(GI[m.lock]);
-  $('main').innerHTML=(banner()||`<p class="tip">Tap a team in each game. 🔒 doubles one pick.</p>`)+G.map(g=>{
+  const n=G.filter(g=>m.picks[g.id]).length;
+  $('main').innerHTML=`<div class="sec"><h2>Picks <span class="dim">${n}/14</span></h2><span class="dim">🔒 = 2×</span></div>`+G.map(g=>{
     const k=m.picks[g.id],lk=locked(g),r=result(g),s=S[g.id],sc=s&&(PP.isLive(s)||PP.isFinal(s));
     const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';
       return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''} aria-pressed="${k===side}"><i style="background:${TC[ab]}"></i>${side==='H'?'@ ':''}${ab}${sc?` <small>${pts}</small>`:''}</button>`};
@@ -188,24 +209,34 @@ let boardURL='',drawing=false,boardCanvas=null;
 async function drawBoard(){if(drawing)return;drawing=true;
   try{boardCanvas=await Board.draw({P,S,O,me});boardURL=boardCanvas.toDataURL('image/jpeg',.9);const im=$('board');if(im)im.src=boardURL}catch(e){console.error(e)}drawing=false}
 function homeView(m){
-  const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out','drop'].includes(e.kind)&&e.ts<=Date.now()+60000)
-    .map(e=>e.kind==='drop'?(()=>{const lk=Object.keys(P).filter(id=>P[id].lock===e.gid&&P[id].picks[e.gid]);return lk.length?{...e,short:'🔒 '+lk.map(id=>P[id].name+' locked '+(P[id].picks[e.gid]==='H'?GI[e.gid].h:GI[e.gid].a)).join(', ')}:null})():e).filter(Boolean)
-    .concat(joins.length?[{key:'joins',ts:joins[joins.length-1].ts,short:`👋 ${joins.length} in: ${joins.map(j=>j.name).join(', ')}`}]:[])
-    .sort((a,b)=>b.ts-a.ts).slice(0,25);
-  $('main').innerHTML=banner()+`<img id="board" alt="Standings" ${boardURL?`src="${boardURL}"`:''}>
-    <button class="primary" style="width:100%" data-x="share">Share standings</button>
-    <h3 class="fh">Latest</h3>
-    ${E.length?`<ul class="feed">${E.map(e=>`<li><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></li>`).join('')}</ul>`:'<p class="mute">Results show up here as games finish.</p>'}
-    <button class="add" data-x="add">+ Add player</button>
-    ${Date.now()<FIRST?'':`<details><summary>How scoring works</summary><p>Each game is worth 1 point for every person who picked it. Everyone who picked the winner splits those points. 🔒 doubles your share for one game. Max is the most you can still finish with. Win % comes from sportsbook odds plus live scores. Picks are hidden until each game starts.</p></details>`}`;
-  drawBoard();
+  const ids=Object.keys(P),T=PP.tally(P,S),W=PP.simulate(P,S,O),A=PP.awards(P,S,T);
+  const lead=Math.max(0,...ids.map(id=>T[id].pts));
+  const rows=ids.map(id=>({id,...T[id],w:W[id]||0,b:A[id]||[]})).sort((a,b)=>b.pts-a.pts||b.w-a.w||b.max-a.max);
+  const pct=w=>w>=.995&&w<1?'>99%':w>0&&w<.005?'<1%':Math.round(w*100)+'%';
+  const ICON={fire:'🔥',fade:'👑',sheep:'🐑',bad:'💀',round:'🍺'};
+  const n=G.filter(g=>m.picks[g.id]).length,fin=G.filter(result).length,live=G.filter(g=>PP.isLive(S[g.id])).length;
+  const mi=rows.findIndex(r=>r.id===me),mr=rows[mi];
+  // hero: one big number
+  let hero;
+  if(Date.now()<FIRST)hero=`<div class="big" id="cd">${left()}</div><div class="cap">until picks start locking</div>
+    ${n<14?`<button class="primary pill" data-tab="pick">Make your picks · ${n}/14</button>`:`<div class="ok">✓ All 14 picked</div>`}<div><button class="lnk" data-x="rules" style="font-size:15px">How it works</button></div>`;
+  else hero=`<div class="big">${mr&&mr.max<lead-1e-9?'Out':'#'+(mi+1)}</div><div class="cap">${PP.f1(mr?mr.pts:0)} pts · ${pct(mr?mr.w:0)} to win · ${fin===14?'Final':live?live+' live':fin+'/14 final'}</div>`;
+  const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).sort((a,b)=>b.ts-a.ts).slice(0,3);
+  $('main').innerHTML=`<div class="hero">${hero}</div>
+    <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
+    <div class="list"><div class="lh"><span></span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
+      return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}"><span class="rk">${i+1}</span>${crest(t.m,t.kit,32)}
+        <span class="n"><b>${esc(p.name)}</b><small>${MASCOTS[t.m]}${r.b.length?' · '+r.b.map(k=>ICON[k]).join(''):''}</small></span>
+        <span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span></div>`}).join('')}</div>
+    ${E.length?`<div class="sec"><h2>Latest</h2></div><div class="list">${E.map(e=>`<div class="f"><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></div>`).join('')}</div>`:''}`;
 }
 function renderSheet(){
   const m=mine(),el=$('sheet');if(!sheet||!m){el.innerHTML='';return}
   const t=teamOf(me,m);
   el.innerHTML=`<div class="sheet" data-x="close"><div>${sheet==='team'
     ?`<b>Pick your mascot</b><div class="crests">${MASCOTS.map((n,i)=>`<button data-m="${i}" class="${i===t.m?'on':''}">${crest(i,t.kit,46)}${n}</button>`).join('')}</div>`
-    :`<button class="opt" data-x="team">Change mascot</button><button class="opt" data-x="out">Switch player</button><button class="opt danger" data-x="del">Remove ${esc(m.name)}</button>`}</div></div>`;
+    :sheet==='rules'?`<b>How scoring works</b><ul class="rules"><li>Each game is worth 1 point for every person who picked it.</li><li>Everyone who picked the winner splits those points.</li><li>🔒 doubles your share for one game.</li><li>Picks lock when each game starts and stay hidden until then.</li><li>Max is the most you can still finish with. Win % uses sportsbook odds and live scores.</li></ul>`
+    :`<div class="who">${crest(t.m,t.kit,40)}<b>${esc(teamName(m.name,t.m))}</b></div><button class="opt" data-x="rules">How scoring works</button><button class="opt" data-x="add">Add a player</button><button class="opt" data-x="team">Change mascot</button><button class="opt" data-x="out">Switch player</button><button class="opt danger" data-x="del">Remove ${esc(m.name)}</button>`}</div></div>`;
 }
 function notify(){
   const m=mine();if(!m)return;
@@ -238,6 +269,8 @@ document.addEventListener('click',async e=>{
   if(b.dataset.claim){save(b.dataset.claim);tab=null;render();return}
   if(x==='menu'){sheet='menu';renderSheet();return}
   if(x==='team'){sheet='team';renderSheet();return}
+  if(x==='rules'){sheet='rules';renderSheet();return}
+  if(x==='rules'&&!mine())return;
   if(x==='out'){sheet=null;me=null;ls.del('pp_me');tab=null;render();return}
   if(x==='share'){share();return}
   if(x==='add'){me=null;ls.del('pp_me');tab=null;sheet=null;render();setTimeout(()=>$('nick')&&$('nick').focus(),50);return}
