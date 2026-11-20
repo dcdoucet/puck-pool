@@ -85,7 +85,7 @@ function feed(P,S,O,seen={}){
       const key='g:'+g.id+':'+i;
       E.push({key,ts:seen[key]||est(g,p,tm),kind:'goal',gid:g.id,side,team,ids:fans,vs,
         text:`${CALLS[hash(key)%CALLS.length]} ${team}${who?' — '+who:''}${str==='pp'?' on the power play':str==='sh'?' SHORTHANDED':''}. ${g.a} ${as}, ${g.h} ${hs} (${per(p)} ${tm}).`+(fans.length?` Cha-ching for ${names(P,fans)}.`:''),
-        score:`${g.a} ${as} · ${g.h} ${hs}`,who,p,tm});
+        score:`${g.a} ${as} · ${g.h} ${hs}`,who,p,tm,short:`🚨 ${team}${who?' '+who.split('. ').pop():''} · ${g.a} ${as}–${hs} ${g.h}`});
     });
     if(isFinal(s)){
       const r=result(S,g),win=r==='H'?g.h:g.a,W=r==='H'?H:A,pot=A.length+H.length,last=(s.goals||[]).slice(-1)[0];
@@ -94,7 +94,8 @@ function feed(P,S,O,seen={}){
       let t=`🏁 FINAL${s.period>4?' (SO)':s.period>3?' (OT)':''}: ${g.a} ${s.as}, ${g.h} ${s.hs}. `+(dog?'⚡ UPSET ALERT! ':'');
       t+=W.length?`${win} backers split ${pot} pts (+${f1(pot/W.length)} each).`:`Nobody had ${win}. The pot vanishes like a beer at the second intermission.`;
       for(const id of locks)t+=P[id].picks[g.id]===r?` 🔒 ${P[id].name}'s lock CASHES, double points!`:` 💥 ${P[id].name}'s lock goes up in smoke.`;
-      E.push({key:'f:'+g.id,ts,kind:'final',gid:g.id,side:r,team:win,ids:W,vs:r==='H'?A:H,text:t,pts:pot/Math.max(1,W.length)});
+      E.push({key:'f:'+g.id,ts,kind:'final',gid:g.id,side:r,team:win,ids:W,vs:r==='H'?A:H,text:t,pts:pot/Math.max(1,W.length),
+        short:`${dog?'⚡':'🏁'} ${win} wins ${Math.max(s.as,s.hs)}–${Math.min(s.as,s.hs)}${s.period>4?' SO':s.period>3?' OT':''} · `+(W.length?`+${f1(pot/W.length)} to ${W.length}`:'nobody had it')+(locks.length?' 🔒':'')});
     }
   }
   // replay finals in order for lead changes and eliminations
@@ -102,8 +103,8 @@ function feed(P,S,O,seen={}){
   for(const f of fin){S2[f.gid]=S[f.gid];const T=tally(P,S2),lead=Math.max(0,...ids.map(id=>T[id].pts));
     const top=ids.filter(id=>T[id].pts===lead&&lead>0).sort().join();
     if(top&&top!==leaders){const t=top.split(',');E.push({key:'L:'+f.gid+':'+top,ts:f.ts+1,kind:'lead',ids:t,
-      text:t.length>1?`👑 LOGJAM AT THE TOP: ${t.map(id=>teamName(P[id].name,teamOf(id,P[id]).m)).join(' & ')} tied at ${f1(lead)}.`:`👑 NEW LEADER: ${teamName(P[t[0]].name,teamOf(t[0],P[t[0]]).m)} take over 1st with ${f1(lead)} pts.`});leaders=top}
-    for(const id of ids)if(!out.has(id)&&T[id].max<lead-1e-9){out.add(id);E.push({key:'x:'+id,ts:f.ts+2,kind:'out',ids:[id],
+      short:t.length>1?`👑 Tie for 1st`:`👑 ${P[t[0]].name} takes 1st`,text:t.length>1?`👑 LOGJAM AT THE TOP: ${t.map(id=>teamName(P[id].name,teamOf(id,P[id]).m)).join(' & ')} tied at ${f1(lead)}.`:`👑 NEW LEADER: ${teamName(P[t[0]].name,teamOf(t[0],P[t[0]]).m)} take over 1st with ${f1(lead)} pts.`});leaders=top}
+    for(const id of ids)if(!out.has(id)&&T[id].max<lead-1e-9){out.add(id);E.push({key:'x:'+id,ts:f.ts+2,kind:'out',ids:[id],short:`👾 ${P[id].name} is out`,
       text:`👾 GAME OVER: ${teamName(P[id].name,teamOf(id,P[id]).m)} are mathematically eliminated. Insert coin.`})}}
   return E.sort((a,b)=>a.ts-b.ts);
 }
