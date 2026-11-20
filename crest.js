@@ -33,5 +33,5 @@ function teamOf(id,p){const x=hashId(id);const m=Number.isInteger(p&&p.mascot)?p
 function teamName(name,m){return name+(/s$/i.test(name)?"'":"'s")+' '+MASCOTS[m]}
 function crest(m,kit,size){
   const [a,b]=kit;
-  return `<svg class="cr" width="${size||40}" height="${size||40}" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 5 H56 V30 Q56 50 32 61 Q8 50 8 30Z" fill="${a}" stroke="#111" stroke-width="3" stroke-linejoin="round"/><path d="M12.5 9.5 H51.5 V30 Q51.5 46.5 32 56 Q12.5 46.5 12.5 30Z" fill="none" stroke="${b}" stroke-width="1.8" stroke-dasharray="3 2.4"/><g transform="translate(13 9) scale(.95)">${GLYPH[m](a)}</g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="cr" width="${size||40}" height="${size||40}" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 5 H56 V30 Q56 50 32 61 Q8 50 8 30Z" fill="${a}" stroke="#111" stroke-width="3" stroke-linejoin="round"/><path d="M12.5 9.5 H51.5 V30 Q51.5 46.5 32 56 Q12.5 46.5 12.5 30Z" fill="none" stroke="${b}" stroke-width="1.8" stroke-dasharray="3 2.4"/><g transform="translate(13 9) scale(.95)">${GLYPH[m](a)}</g></svg>`;
 }

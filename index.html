@@ -36,6 +36,7 @@ tr.me td{font-weight:700}
 .crests{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:12px}
 .crests button{background:var(--bg);color:var(--ink);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:6px 2px;font-size:12px;font-weight:500;gap:2px}
 .crests button.on{border-color:var(--on)}
+#board{width:100%;display:block;border-radius:10px;margin:6px 0;background:#fff;min-height:200px}
 .done{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));width:100%;margin-top:8px;font-size:19px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .edit{width:100%;margin:6px 0 4px}
 </style></head><body><main>
@@ -45,13 +46,14 @@ tr.me td{font-weight:700}
 <div id="view"></div>
 </main>
 <script src="crest.js"></script>
+<script src="board.js"></script>
 <script>
 {
 const G=[["2026020359","EDM","CAR","2026-11-21T18:00:00Z"],["2026020360","CHI","CGY","2026-11-21T20:30:00Z"],["2026020361","BUF","FLA","2026-11-21T23:00:00Z"],["2026020362","PIT","NSH","2026-11-21T23:00:00Z"],["2026020363","WSH","BOS","2026-11-22T00:00:00Z"],["2026020364","CBJ","TOR","2026-11-22T00:00:00Z"],["2026020365","PHI","MTL","2026-11-22T00:00:00Z"],["2026020366","LAK","OTT","2026-11-22T00:00:00Z"],["2026020367","NYI","DET","2026-11-22T00:00:00Z"],["2026020368","NJD","STL","2026-11-22T00:00:00Z"],["2026020369","VGK","WPG","2026-11-22T00:00:00Z"],["2026020370","ANA","UTA","2026-11-22T02:00:00Z"],["2026020371","MIN","VAN","2026-11-22T03:00:00Z"],["2026020372","SEA","SJS","2026-11-22T03:00:00Z"]].map(([id,a,h,t])=>({id,a,h,t:Date.parse(t)}));
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const TOPIC='puckpool-614c7aa1d6ed',NT='https://ntfy.sh/'+TOPIC;
-let picking=false,view=null,ev=new Map(),P={},scores={},me=null,busy=false,choosing=false,err='',loaded=false;
+let odds={},boardURL='',picking=false,view=null,ev=new Map(),P={},scores={},me=null,busy=false,choosing=false,err='',loaded=false;
 try{me=localStorage.getItem('pp_me')}catch{}
 const save=id=>{me=id;try{localStorage.setItem('pp_me',id)}catch{}};
 const locked=g=>Date.now()>=g.t||(scores[g.id]&&!['FUT','PRE'].includes(scores[g.id].state));
@@ -70,10 +72,12 @@ const add=e=>{if(e&&e.id&&e.message)ev.set(e.id,e)};
 async function load(){
   try{
     const t=Date.now();
-    const [arc,live,s]=await Promise.all([
+    const [arc,live,s,o]=await Promise.all([
       fetch('picks.json?t='+t).then(r=>r.ok?r.json():[]).catch(()=>[]),
       fetch(NT+'/json?poll=1&since=all').then(r=>r.text()),
-      fetch('scores.json?t='+t).then(r=>r.json()).catch(()=>({}))]);
+      fetch('scores.json?t='+t).then(r=>r.json()).catch(()=>({})),
+      fetch('odds.json?t='+t).then(r=>r.json()).catch(()=>({}))]);
+    odds=o||{};
     (arc||[]).forEach(add);
     live.split('\n').forEach(l=>{if(!l)return;try{const e=JSON.parse(l);if(e.event==='message')add(e)}catch{}});
     scores=s||{};err='';loaded=true;
@@ -86,7 +90,20 @@ async function post(msg){
   add(await r.json());build();
 }
 const dark=matchMedia('(prefers-color-scheme: dark)').matches;
-const logo=ab=>`<img class="lg" alt="" src="https://assets.nhle.com/logos/nhl/svg/${ab}_${dark?'dark':'light'}.svg" onerror="this.remove()">`;
+const logo=ab=>`<img class="lg" alt="" src="logos/${ab}_${dark?'dark':'light'}.svg" onerror="this.remove()">`;
+let drawing=false,boardCanvas=null;
+async function drawBoard(){
+  if(drawing)return;drawing=true;
+  try{boardCanvas=await Board.draw({G,P,scores,odds,result,locked,me});boardURL=boardCanvas.toDataURL('image/jpeg',.9);const im=$('board');if(im)im.src=boardURL}catch(e){console.error(e)}
+  drawing=false;
+}
+async function shareBoard(){
+  if(!boardCanvas)return;
+  const blob=await new Promise(r=>boardCanvas.toBlob(r,'image/jpeg',.9));
+  const file=new File([blob],'puck-pool.jpg',{type:'image/jpeg'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});return}}catch(e){if(e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='puck-pool.jpg';document.body.appendChild(a);a.click();a.remove();
+}
 const fmt=n=>String(Math.round(n*10)/10);
 function tally(){
   // each game's pot = everyone who picked it; the people who got it right split the pot
@@ -122,11 +139,10 @@ function render(){
       return `<div class="g">${b('A',g.a,s?.as)}${b('H',g.h,s?.hs)}</div>`}).join('')+'<button class="done" data-x="done">Done</button>';
     return;
   }
-  const T=tally(),ids=Object.keys(P),lead=Math.max(0,...ids.map(id=>T[id].pts));
-  const rows=ids.map(id=>({id,p:P[id],...T[id]})).sort((a,b)=>b.pts-a.pts||b.max-a.max||a.p.name.localeCompare(b.p.name));
   $('view').innerHTML=(mine?'<button class="edit" data-x="edit">Edit picks</button>':'')+
-    `<table><thead><tr><th>Player</th><th>Pts</th><th>Max</th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr class="${r.id===me?'me':''} ${r.max<lead?'out':''}"><td><span class="nm">${(T2=>crest(T2.m,T2.kit,36))(teamOf(r.id,r.p))}<span>${esc(teamName(r.p.name,teamOf(r.id,r.p).m))}${r.max<lead?' · out':''}</span></span></td><td>${fmt(r.pts)}</td><td>${fmt(r.max)}</td></tr>`).join(''):'<tr><td colspan="3" class="mute">No one yet.</td></tr>'}</tbody></table>
-    <p class="mute">Each game is worth one point per person who picked it, split among everyone who got it right. Max is the most you can still finish with. Picks lock when each game starts.</p>`;
+    `<img id="board" alt="Pool standings" ${boardURL?`src="${boardURL}"`:''}><button class="edit" data-x="share">Save / share image</button><p class="mute">Or press and hold the image to save it. Updates every 30 seconds.</p>`;
+  drawBoard();
+
 }
 document.addEventListener('submit',async e=>{
   e.preventDefault();if(busy)return;const n=$('nick').value.trim().slice(0,16);if(!n)return;
@@ -143,6 +159,7 @@ document.addEventListener('click',async e=>{
     busy=true;try{await post({t:'x',p:me});me=null;try{localStorage.removeItem('pp_me')}catch{};view=null;err=''}catch{err='Couldn’t remove, try again.'}
     busy=false;render();
   }
+  else if(b.dataset.x==='share'){shareBoard()}
   else if(b.dataset.x==='team'){picking=!picking;render()}
   else if(b.dataset.m&&!busy){const m=+b.dataset.m;busy=true;P[me].mascot=m;picking=false;render();
     try{await post({t:'m',p:me,m});err=''}catch{err='Couldn’t change team, try again.';build()}busy=false;render()}

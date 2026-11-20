@@ -43,21 +43,35 @@ def pois(l):
     for k in range(16): p.append(v); v = v*l/(k+1)
     return p
 
-def p_home(s):
-    if not s or s.get("state") in (None,"FUT","PRE"): return 0.54
+def prior(o):
+    if not o or o.get("a") is None or o.get("h") is None: return 0.54
+    imp = lambda m: -m/(-m+100) if m < 0 else 100/(m+100)
+    a, h = imp(o["a"]), imp(o["h"]); return h/(a+h)
+
+def p_win(lead, lh, la, ot):
+    ph, pa = pois(lh), pois(la); w = 0
+    for i in range(16):
+        for j in range(16):
+            d = lead+i-j; w += ph[i]*pa[j]*(1 if d > 0 else ot if d == 0 else 0)
+    return w
+
+def p_home(s, o=None):
+    """Pregame: sportsbook moneyline (vig removed). Live: goal rates fit to that line, run over time left."""
+    p = prior(o)
+    if not s or s.get("state") in (None,"FUT","PRE"): return p
     lead = s["hs"] - s["as"]
     if result(s): return 1.0 if lead > 0 else 0.0
+    ot = .5 + (p-.5)*.4; lo, hi = .2, .8
+    for _ in range(30):
+        m = (lo+hi)/2
+        if p_win(0, 6.2*m, 6.2*(1-m), ot) < p: lo = m
+        else: hi = m
     per = s.get("period") or 1
-    if per > 3: return 1.0 if lead > 0 else 0.0 if lead < 0 else 0.52
+    if per > 3: return 1.0 if lead > 0 else 0.0 if lead < 0 else ot
     try: mm, ss = (s.get("clock") or "10:00").split(":"); cl = int(mm) + int(ss)/60
     except Exception: cl = 10
     rem = (3-per)*20 + cl
-    ph, pa = pois(3.2*rem/60), pois(3.0*rem/60)
-    w = 0
-    for i in range(16):
-        for j in range(16):
-            d = lead+i-j; w += ph[i]*pa[j]*(1 if d > 0 else 0.52 if d == 0 else 0)
-    return w
+    return p_win(lead, 6.2*lo*rem/60, 6.2*(1-lo)*rem/60, ot)
 
 def american(p):
     if p >= 0.999: return "LOCK"
@@ -66,9 +80,11 @@ def american(p):
 
 def main():
     if "--test" in sys.argv:
-        i = sys.argv.index("--test"); events = json.load(open(sys.argv[i+1])); scores = json.load(open(sys.argv[i+2]))
+        i = sys.argv.index("--test"); events = json.load(open(sys.argv[i+1])); scores = json.load(open(sys.argv[i+2])); odds = {}
     else:
         events, scores = gh("picks.json"), gh("scores.json")
+        try: odds = gh("odds.json")
+        except Exception: odds = {}
     P = players_from(events)
     ids = list(P)
     def tally(out):  # out: gid -> 'A'/'H' for decided games; pot = pickers, split among winners
@@ -86,7 +102,7 @@ def main():
         who = [pid for pid in ids if P[pid]["picks"].get(g[0])]
         for pid in who:
             mx[pid] += len(who)/sum(1 for x in who if P[x]["picks"][g[0]] == P[pid]["picks"][g[0]])
-    probs = [(g[0], result(scores.get(g[0])), p_home(scores.get(g[0]))) for g in G]
+    probs = [(g[0], result(scores.get(g[0])), p_home(scores.get(g[0]), odds.get(g[0]))) for g in G]
     N, win = 20000, {pid: 0.0 for pid in ids}
     if ids:
         for _ in range(N):
@@ -102,7 +118,7 @@ def main():
         st = "final" if r else "live" if s.get("state") in ("LIVE","CRIT") else "upcoming"
         games.append({"game": f"{g[1]} @ {g[2]}", "status": st, "score": f"{g[1]} {s.get('as',0)} - {g[2]} {s.get('hs',0)}" if st != "upcoming" else None,
                       "period": s.get("period") if st == "live" else None, "clock": s.get("clock") if st == "live" else None,
-                      "winner": (g[2] if r == "H" else g[1]) if r else None, "home_win_chance": round(p_home(s),3),
+                      "winner": (g[2] if r == "H" else g[1]) if r else None, "home_win_chance": round(p_home(s, odds.get(g[0])),3), "moneyline": odds.get(g[0]),
                       "picked_" + g[1]: a, "picked_" + g[2]: h})
     stand = sorted(({"name": P[pid]["name"], "team": team(pid, P[pid]), "points": round(pts[pid],1), "max_possible": round(mx[pid],1), "win_chance": round(win[pid]/N,3) if ids else 0,
                      "odds": american(win[pid]/N) if ids else None, "picks_made": len(P[pid]["picks"])} for pid in ids),

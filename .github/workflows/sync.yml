@@ -42,7 +42,7 @@ jobs:
           jq --slurpfile sc scores.json '
             (.bettingPartner.name // "sportsbook") as $src | (.lastUpdatedUTC // "") as $at |
             [ .games[]? | (.gameId|tostring) as $id
-              | select(($sc[0][$id].state // "FUT") as $st | $st=="FUT" or $st=="PRE")
+              | select($sc[0][$id] != null) | select($sc[0][$id].state=="FUT" or $sc[0][$id].state=="PRE")
               | {key: $id, value: {
                   a: ([.awayTeam.odds[]? | select(.description=="MONEY_LINE_2_WAY") | .value][0]),
                   h: ([.homeTeam.odds[]? | select(.description=="MONEY_LINE_2_WAY") | .value][0]),
