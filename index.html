@@ -9,7 +9,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
 header{position:sticky;top:0;z-index:10;background:var(--bg);padding:calc(8px + env(safe-area-inset-top)) 16px 8px;display:flex;align-items:center;justify-content:space-between;max-width:560px;margin:auto}
 header h1{font-size:20px;margin:0;font-weight:750;letter-spacing:-.01em}
-main{max-width:560px;margin:auto;padding:0 16px calc(96px + env(safe-area-inset-bottom))}
+main{max-width:560px;margin:auto;padding:0 16px calc(28px + env(safe-area-inset-bottom))}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none;padding:0}
 .primary{background:var(--acc);color:#fff;font-weight:650;border-radius:12px;min-height:50px;padding:0 18px}
@@ -23,6 +23,7 @@ input:focus{outline:2px solid var(--acc);border-color:transparent}
 .st{font-size:13px;color:var(--mute);margin:0 2px 8px;display:flex;justify-content:space-between}
 .st b{color:var(--bad);font-weight:600}
 .t{min-height:56px;border-radius:12px;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:18px}
+.t{flex-direction:column;gap:2px}.t .tt{display:flex;align-items:center;gap:8px}.t .sub{font-size:12px;font-weight:600;color:var(--mute)}.t.on .sub{color:var(--acc)}
 .t i{width:10px;height:10px;border-radius:50%;flex:none}
 .t small{font-weight:600;color:var(--mute);font-size:16px}
 .t.on{border-color:var(--acc);background:var(--accbg);color:var(--acc)}
@@ -54,10 +55,6 @@ input:focus{outline:2px solid var(--acc);border-color:transparent}
 .colh{display:grid;grid-template-columns:24px 34px 1fr auto auto auto;gap:10px;padding:0 12px 6px;font-size:12px;color:var(--mute);font-weight:600}
 .colh span:nth-child(4){min-width:36px;text-align:right}.colh span:nth-child(5){min-width:40px;text-align:right}.colh span:nth-child(6){min-width:48px;text-align:right}
 details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px;display:flex;align-items:center;color:var(--acc);font-weight:600}
-nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;max-width:280px;min-height:58px;font-size:15px;font-weight:650;color:var(--mute);display:flex;align-items:center;justify-content:center;gap:6px}
-nav button.on{color:var(--acc)}
-nav em{font-style:normal;font-size:12px;background:var(--line);color:var(--ink);border-radius:10px;padding:1px 7px}
 .sheet{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.35);display:flex;align-items:flex-end}
 .sheet>div{background:var(--card);width:100%;max-width:560px;margin:auto auto 0;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
 .sheet .opt{display:block;width:100%;text-align:left;min-height:50px;font-size:17px;border-bottom:1px solid var(--line)}
@@ -81,9 +78,10 @@ nav em{font-style:normal;font-size:12px;background:var(--line);color:var(--ink);
 .hero .big{font-size:56px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
 .hero .cap{color:var(--mute);margin-top:8px;font-size:16px}
 .hero .pill{margin-top:18px;border-radius:999px;padding:0 24px}
+.hero .links{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:6px;font-size:15px}
 .hero .ok{margin-top:18px;color:var(--good);font-weight:650}
 .sec{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
-.sec h2{font-size:20px;margin:0;font-weight:750}
+.sec h2{font-size:20px;margin:0;font-weight:750;white-space:nowrap}
 .dim{color:var(--mute);font-weight:500}.acc{color:var(--acc)}
 .lnk{color:var(--acc);font-weight:650;min-height:44px}
 .list .lh,.list .p{display:grid;grid-template-columns:22px 32px 1fr 40px 44px 52px;gap:10px;align-items:center;padding:0 14px}
@@ -100,6 +98,7 @@ nav em{font-style:normal;font-size:12px;background:var(--line);color:var(--ink);
 .pk{max-height:60vh;overflow:auto;margin-top:4px}.pk div{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line);font-size:16px}.pk div>span:last-child{font-weight:650}
 .okc{color:var(--good)}.noc{color:var(--bad)}
 .rules{padding-left:18px;margin:10px 0 4px;font-size:15px}.rules li{margin:6px 0}
+.done{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));width:100%;margin-top:8px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-150%);z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0)}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
@@ -111,9 +110,8 @@ nav em{font-style:normal;font-size:12px;background:var(--line);color:var(--ink);
 .feed time{flex:none;color:var(--mute);font-size:13px}
 #toast{transition:none}}
 </style></head><body>
-<header><h1>Puck Pool</h1><div id="hdr"></div></header>
+<header><h1 data-tab="home" style="cursor:pointer">Puck Pool</h1><div id="hdr"></div></header>
 <main id="main"><p class="mute">Loading…</p></main>
-<nav id="nav" hidden><button data-tab="home" id="tHome">Home</button><button data-tab="pick" id="tPick">Picks <em id="cnt"></em></button></nav>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="sheet"></div>
 <script src="crest.js"></script>
@@ -181,9 +179,6 @@ function render(){
   const m=mine();
   if(loaded&&!tab)tab=m&&G.every(g=>locked(g)||m.picks[g.id])?'home':'pick';
   $('hdr').innerHTML=m?`<button class="me" data-x="menu" aria-label="Menu">${crest(teamOf(me,m).m,teamOf(me,m).kit,32)}</button>`:'';
-  $('nav').hidden=!m;
-  if(m){$('tPick').classList.toggle('on',tab==='pick');$('tHome').classList.toggle('on',tab==='home');
-    $('cnt').textContent=G.filter(g=>m.picks[g.id]).length+'/14'}
   if(!loaded){$('main').innerHTML=`<p class="mute">${err||'Loading…'}</p>`;return}
   if(!m){joinView();renderSheet();return}
   tab==='pick'?pickView(m):homeView(m);
@@ -202,10 +197,12 @@ function pickView(m){
   const n=G.filter(g=>m.picks[g.id]).length;
   $('main').innerHTML=`<div class="sec"><h2>Picks <span class="dim">${n}/14</span></h2><span class="dim">🔒 = 2×</span></div>`+G.map(g=>{
     const k=m.picks[g.id],lk=locked(g),r=result(g),s=S[g.id],sc=s&&(PP.isLive(s)||PP.isFinal(s));
-    const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';
-      return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''} aria-pressed="${k===side}"><i style="background:${TC[ab]}"></i>${side==='H'?'@ ':''}${ab}${sc?` <small>${pts}</small>`:''}</button>`};
+    const oth=Object.keys(P).filter(id=>id!==me),nA=oth.filter(id=>P[id].picks[g.id]==='A').length,nH=oth.filter(id=>P[id].picks[g.id]==='H').length,pot=nA+nH+1;
+    const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';const n=side==='A'?nA:nH;
+      const sub=sc?'':`<span class="sub">${n+(k===side?1:0)} picked · wins +${PP.f1(pot/(n+1)*(m.lock===g.id&&k===side?2:1))}</span>`;
+      return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''} aria-pressed="${k===side}"><span class="tt"><i style="background:${TC[ab]}"></i>${side==='H'?'@ ':''}${ab}${sc?` <small>${pts}</small>`:''}</span>${sub}</button>`};
     const st=status(g),isL=m.lock===g.id;
-    return `<div class="card">${st?`<div class="st"><span>${st}</span></div>`:''}<div class="row">${b('A',g.a,s?.as)}${b('H',g.h,s?.hs)}<button class="lk ${isL?'on':''}" data-lock="${g.id}" aria-label="Double points on ${g.a} at ${g.h}" aria-pressed="${isL}" ${lk||(frozen&&!isL)||!k?'disabled':''}>🔒</button></div></div>`}).join('');
+    return `<div class="card">${st?`<div class="st"><span>${st}</span></div>`:''}<div class="row">${b('A',g.a,s?.as)}${b('H',g.h,s?.hs)}<button class="lk ${isL?'on':''}" data-lock="${g.id}" aria-label="Double points on ${g.a} at ${g.h}" aria-pressed="${isL}" ${lk||(frozen&&!isL)||!k?'disabled':''}>🔒</button></div></div>`}).join('')+'<button class="primary done" data-tab="home">Done</button>';
 }
 let boardURL='',drawing=false,boardCanvas=null;
 async function drawBoard(){if(drawing)return;drawing=true;
@@ -223,7 +220,7 @@ function homeView(m){
   if(Date.now()<FIRST)hero=`<div class="big" id="cd">${left()}</div><div class="cap">until picks start locking</div>
     ${n<14?`<button class="primary pill" data-tab="pick">Make your picks · ${n}/14</button>`:`<div class="ok">✓ All 14 picked</div>`}`;
   else hero=`<div class="big">${mr&&mr.max<lead-1e-9?'Out':'#'+(mi+1)}</div><div class="cap">${PP.f1(mr?mr.pts:0)} pts · ${pct(mr?mr.w:0)} to win · ${fin===14?'Final':live?live+' live':fin+'/14 final'}</div>`;
-  hero+=`<div><button class="lnk" data-x="rules" style="font-size:15px">How it works</button></div>`;
+  hero+=`<div class="links">${n>=14||Date.now()>=FIRST?`<button class="lnk" data-tab="pick">${Date.now()>=FIRST?'Your picks':'Edit picks'}</button><span class="dim">·</span>`:''}<button class="lnk" data-x="rules">How it works</button></div>`;
   const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).sort((a,b)=>b.ts-a.ts).slice(0,3);
   $('main').innerHTML=`<div class="hero">${hero}</div>
     <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
@@ -236,8 +233,8 @@ function homeView(m){
 function playerSheet(id){
   const p=P[id];if(!p)return '';const t=teamOf(id,p),T=PP.tally(P,S)[id],self=id===me;
   return `<div class="who">${crest(t.m,t.kit,40)}<div><b>${esc(teamName(p.name,t.m))}</b><div class="mute">${PP.f1(T.pts)} pts · max ${PP.f1(T.max)}</div></div></div>
-  <div class="pk">${G.map(g=>{const k=p.picks[g.id],show=self||locked(g),r=result(g),s=S[g.id];
-    const pick=!k?'<span class="dim">—</span>':!show?'<span class="dim">Hidden</span>':`<span class="${r?(r===k?'okc':'noc'):''}">${k==='H'?g.h:g.a}${p.lock===g.id?' · 2×':''}${r?(r===k?' ✓':' ✗'):PP.isLive(s)?' · live':''}</span>`;
+  <div class="pk">${G.map(g=>{const k=p.picks[g.id],show=true,r=result(g),s=S[g.id];
+    const pick=!k?'<span class="dim">—</span>':!show?'<span class="dim">Hidden</span>':`<span class="${r?(r===k?'okc':'noc'):''}">${k==='H'?g.h:g.a}${p.lock===g.id&&(self||locked(g))?' · 2×':''}${r?(r===k?' ✓':' ✗'):PP.isLive(s)?' · live':''}</span>`;
     return `<div><span>${g.a} @ ${g.h}</span>${pick}</div>`}).join('')}</div>`;
 }
 function renderSheet(){
@@ -246,7 +243,7 @@ function renderSheet(){
   el.innerHTML=`<div class="sheet" data-x="close"><div>${sheet==='team'
     ?`<b>Pick your avatar</b><div class="crests">${MASCOTS.map((n,i)=>`<button data-m="${i}" class="${i===t.m?'on':''}">${crest(i,t.kit,46)}${n}</button>`).join('')}</div>`
     :sheet.startsWith('pl:')?playerSheet(sheet.slice(3))
-    :sheet==='rules'?`<b>How scoring works</b><ul class="rules"><li>Each game is worth 1 point for every person who picked it.</li><li>Everyone who picked the winner splits those points.</li><li>🔒 doubles your share for one game.</li><li>Picks lock when each game starts and stay hidden until then.</li><li>Max is the most you can still finish with. Win % uses sportsbook odds and live scores.</li></ul>`
+    :sheet==='rules'?`<b>How scoring works</b><ul class="rules"><li>Each game is worth 1 point for every person who picked it.</li><li>Everyone who picked the winner splits those points.</li><li>🔒 doubles your share for one game.</li><li>Everyone's picks are visible, so you can play the crowd. Picks lock when each game starts. Locks stay secret until puck drop.</li><li>Max is the most you can still finish with. Win % uses sportsbook odds and live scores.</li></ul>`
     :`<div class="who">${crest(t.m,t.kit,40)}<b>${esc(teamName(m.name,t.m))}</b></div><button class="opt" data-x="team">Change avatar</button><button class="opt" data-x="add">Switch or add player</button><button class="opt danger" data-x="del">Remove ${esc(m.name)}</button>`}</div></div>`;
 }
 function notify(){
@@ -274,7 +271,7 @@ document.addEventListener('submit',async e=>{
   try{await post({t:'j',p:id,n})}catch{toast('Couldn’t join. Try again.');me=null}busy=false;render();
 });
 document.addEventListener('click',async e=>{
-  const b=e.target.closest('button,[data-x="close"]');if(!b)return;const x=b.dataset.x;
+  const b=e.target.closest('button,[data-x="close"],h1[data-tab]');if(!b)return;const x=b.dataset.x;
   if(x==='close'){if(e.target===b){sheet=null;renderSheet()}return}
   if(b.dataset.tab){tab=b.dataset.tab;open=null;render();scrollTo(0,0);return}
   if(b.dataset.claim){save(b.dataset.claim);tab=null;render();return}
