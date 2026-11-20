@@ -96,6 +96,11 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 .list .f time{flex:none;color:var(--mute);font-size:13px}
 .who{display:flex;align-items:center;gap:10px;padding:4px 0 10px}
 .pk{max-height:60vh;overflow:auto;margin-top:4px}.pk div{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line);font-size:16px}.pk div>span:last-child{font-weight:650}
+.pk div{align-items:center;justify-content:flex-start;gap:10px}
+.pkt{width:56px;height:38px;border-radius:10px;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center;opacity:.35}
+.pkt img{width:40px;height:28px;object-fit:contain}
+.pkt.on{opacity:1;border-color:var(--acc);background:var(--accbg)}.pkt.hit{opacity:1;border-color:var(--good)}.pkt.miss{opacity:.6;border-color:var(--bad)}
+.pst{margin-left:auto;font-weight:700}
 .okc{color:var(--good)}.noc{color:var(--bad)}
 .rules{padding-left:18px;margin:10px 0 4px;font-size:15px}.rules li{margin:6px 0}
 .done{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));width:100%;margin-top:8px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
@@ -112,10 +117,10 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 .sl .lh,.sl .p{display:grid;grid-template-columns:16px 22px 64px minmax(0,1fr) 30px 36px 38px;gap:6px;align-items:center;padding:0 10px}
 .sl .lh{font-size:12px;color:var(--mute);font-weight:600;min-height:32px}.sl .lh span{text-align:right}.sl .lh .pkh{grid-column:4;text-align:left}
 .sl .lh span:first-child{grid-column:1/4}
-.sl .p{min-height:54px;padding-bottom:0}
+.sl .p{min-height:54px;padding-bottom:0;cursor:pointer}
 .sl .n{font-weight:650;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sl .v{font-size:15px}
-.sx{display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding:4px 0}
+.sx{display:flex;gap:3px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding:4px 0}
 .sx::-webkit-scrollbar{display:none}
 .sx .ps{flex:none;width:24px;height:18px}.sx .ps img{height:18px}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-300%);opacity:0;visibility:hidden;z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s,opacity .25s,visibility .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
@@ -255,7 +260,7 @@ function homeView(m){
     <div class="list sl"><div class="lh"><span></span><span class="pkh">Picks →</span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
       const strip=G.map(g=>{const k=p.picks[g.id],rs=result(g);if(!k)return '<span class="ps none"></span>';
         return `<span class="ps ${rs?(rs===k?'hit':'miss'):''}">${lg(k==='H'?g.h:g.a,'')}</span>`}).join('');
-      return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}"><span class="rk">${i+1}</span>${crest(t.m,t.kit,22)}<span class="n">${esc(p.name)}</span>
+      return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}" data-pl="${esc(r.id)}" role="button" tabindex="0" aria-label="${esc(p.name)}'s picks"><span class="rk">${i+1}</span>${crest(t.m,t.kit,22)}<span class="n">${esc(p.name)}</span>
         <div class="sx">${strip}</div><span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span></div>`}).join('')}</div>
     ${E.length?`<div class="sec"><h2>Latest</h2></div><div class="list">${E.map(e=>`<div class="f"><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></div>`).join('')}</div>`:''}`;
 }
@@ -263,11 +268,16 @@ function playerSheet(id){
   const p=P[id];if(!p)return '';const t=teamOf(id,p),T=PP.tally(P,S)[id],self=id===me;
   return `<div class="who">${crest(t.m,t.kit,40)}<div><b>${esc(teamName(p.name,t.m))}</b><div class="mute">${PP.f1(T.pts)} pts · max ${PP.f1(T.max)}</div></div></div>
   <div class="pk">${G.map(g=>{const k=p.picks[g.id],show=true,r=result(g),s=S[g.id];
-    const pick=!k?'<span class="dim">—</span>':!show?'<span class="dim">Hidden</span>':`<span class="${r?(r===k?'okc':'noc'):''}">${k==='H'?g.h:g.a}${r?(r===k?' ✓':' ✗'):PP.isLive(s)?' · live':''}</span>`;
-    return `<div><span>${g.a} @ ${g.h}</span>${pick}</div>`}).join('')}</div>`;
+    const side=(sd,ab)=>`<span class="pkt ${k===sd?(r?(r===sd?'hit':'miss'):'on'):''}">${lg(ab,'')}</span>`;
+    const st=r?(r===k?'<span class="okc">✓</span>':'<span class="noc">✗</span>'):PP.isLive(s)?'<span class="dim">live</span>':'';
+    return `<div>${side('A',g.a)}<span class="dim">@</span>${side('H',g.h)}<span class="pst">${k?st:'<span class="dim">no pick</span>'}</span></div>`}).join('')}</div>`;
 }
 let SX=null;
-function syncStrips(){const ss=[...document.querySelectorAll('.sx')];if(SX===null){const i=G.findIndex(g=>!result(g));SX=Math.max(0,i-1)*27}ss.forEach(s=>{s.scrollLeft=SX;s.onscroll=()=>{if(s._l)return;SX=s.scrollLeft;ss.forEach(o=>{if(o!==s){o._l=1;o.scrollLeft=SX;requestAnimationFrame(()=>o._l=0)}})}})}
+let SXact=null,SXmoved=false;
+function syncStrips(){const ss=[...document.querySelectorAll('.sx')];if(SX===null){const i=G.findIndex(g=>!result(g));SX=Math.max(0,i-1)*27}
+  ss.forEach(s=>{s.scrollLeft=SX;
+    const grab=()=>{SXact=s;SXmoved=false};s.addEventListener('touchstart',grab,{passive:true});s.addEventListener('pointerdown',grab);s.addEventListener('wheel',grab,{passive:true});
+    s.addEventListener('scroll',()=>{if(SXact!==s)return;SXmoved=true;SX=s.scrollLeft;ss.forEach(o=>{if(o!==s)o.scrollLeft=SX})},{passive:true})})}
 function renderSheet(){
   const m=mine(),el=$('sheet');if(!sheet||!m){el.innerHTML='';return}
   const t=teamOf(me,m);
@@ -303,12 +313,13 @@ document.addEventListener('submit',async e=>{
   try{await post({t:'j',p:id,n})}catch{toast('Couldn’t join. Try again.');me=null}busy=false;render();
 });
 document.addEventListener('click',async e=>{
-  const b=e.target.closest('button,[data-x="close"],h1[data-tab]');if(!b)return;const x=b.dataset.x;
+  const b=e.target.closest('button,[data-x="close"],h1[data-tab],[data-pl]');if(!b)return;const x=b.dataset.x;
   if(x==='close'){if(e.target===b){sheet=null;renderSheet()}return}
   if(b.dataset.tab)sheet=null;
   if(b.dataset.tab&&!mine()){const pv=ls.get('pp_prev');if(pv&&P[pv])save(pv);tab='home';render();scrollTo(0,0);return}
   if(b.dataset.tab){tab=b.dataset.tab;open=null;render();scrollTo(0,0);return}
   if(b.dataset.claim){save(b.dataset.claim);sheet=null;tab='home';render();scrollTo(0,0);return}
+  if(b.dataset.pl){if(e.target.closest('.sx')&&SXmoved)return;sheet='pl:'+b.dataset.pl;renderSheet();return}
   if(x==='menu'){sheet='menu';renderSheet();return}
   if(x==='team'){sheet='team';renderSheet();return}
   if(x==='rules'){sheet='rules';renderSheet();return}
@@ -328,7 +339,8 @@ document.addEventListener('click',async e=>{
 });
 window.__shareCanvas=()=>Board.draw({P,S,O,me}).then(c=>c.toDataURL('image/jpeg',.9));
 load();
-setInterval(()=>{if(!busy&&!document.hidden)load()},15000);
+setInterval(()=>{if(!busy&&!document.hidden&&!sheet)load()},15000);
+document.addEventListener('touchend',()=>setTimeout(()=>{SXmoved=false},400),{passive:true});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy)load()});
 }
 </script>
