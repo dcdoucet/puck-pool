@@ -41,7 +41,8 @@ def odds(scores):
         if not s or s["state"] not in ("FUT", "PRE"): continue
         ml = lambda t: next((o["value"] for o in (g.get(t) or {}).get("odds", []) if o.get("description") == "MONEY_LINE_2_WAY"), None)
         a, h = ml("awayTeam"), ml("homeTeam")
-        if a is not None and h is not None: cur[gid] = {"a": a, "h": h, "src": src, "at": d.get("lastUpdatedUTC", "")}
+        if a is not None and h is not None and (cur.get(gid, {}).get("a"), cur.get(gid, {}).get("h")) != (a, h):
+            cur[gid] = {"a": a, "h": h, "src": src, "at": d.get("lastUpdatedUTC", "")}
     json.dump(cur, open("odds.json", "w"), indent=1)
 
 def commit():
@@ -54,7 +55,7 @@ def commit():
     print("push failed", flush=True)
 
 sh("git", "config", "user.name", "sync-bot"); sh("git", "config", "user.email", "sync-bot@users.noreply.github.com")
-last_sig, next_sync, scores = {}, 0, {}
+last_sig, next_sync, scores, last_commit = {}, 0, {}, 0
 while time.time() - t0 < BUDGET and time.time() < STOP:
     now = time.time()
     in_games = GAME_START <= now <= GAME_END
@@ -75,10 +76,15 @@ while time.time() - t0 < BUDGET and time.time() < STOP:
     if now >= next_sync:
         try: print(time.strftime("%H:%M:%S"), "archived", archive(), "events", flush=True)
         except Exception as e: print("archive failed:", e, flush=True)
-        if scores: json.dump(scores, open("scores.json", "w"), separators=(",", ":"))
+        if scores:
+            try: old = json.load(open("scores.json"))
+            except Exception: old = {}
+            if {g: nhl.sig(v) for g, v in scores.items()} != {g: nhl.sig(v) for g, v in old.items() if "state" in v}:
+                json.dump(scores, open("scores.json", "w"), separators=(",", ":"))
         try: odds(scores)
         except Exception as e: print("odds failed:", e, flush=True)
-        commit()
+        if now - last_commit >= 600:
+            commit(); last_commit = now
         next_sync = now + 300
     time.sleep(20 if in_games else 30)
 

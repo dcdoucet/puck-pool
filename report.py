@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scoring (Lock of the Night doubles that game's share): each game's pot = number of people who picked it, split evenly among those who picked the winner.
+"""Scoring: each game's pot = number of people who picked it, split evenly among those who picked the winner.
 Pool snapshot for the group-text update. Prints JSON.
 Usage: python3 report.py [--test picks.json scores.json]
 Reads picks.json and scores.json from the GitHub repo via `gh api` (synced every 5 min)."""
@@ -122,7 +122,6 @@ def main():
                       "picked_" + g[1]: a, "picked_" + g[2]: h})
     stand = sorted(({"name": P[pid]["name"], "team": team(pid, P[pid]), "points": round(pts[pid],1), "max_possible": round(mx[pid],1), "win_chance": round(win[pid]/N,3) if ids else 0,
                      "odds": american(win[pid]/N) if ids else None, "picks_made": len(P[pid]["picks"]),
-                     "lock": (lambda L: next((f"{x[1]} @ {x[2]} ({x[2] if P[pid]['picks'].get(L)=='H' else x[1]})" for x in G if x[0]==L), None) if L and START[L] <= datetime.datetime.now(datetime.timezone.utc).timestamp() else ("hidden" if L else None))(P[pid].get("lock")),
                      "streak": (lambda h: len(h) - len(h.rstrip("W")))("".join("W" if P[pid]["picks"].get(g[0]) == decided[g[0]] else "L" for g in G if g[0] in decided and P[pid]["picks"].get(g[0])))} for pid in ids),
                    key=lambda x: (-x["win_chance"], -x["points"]))
     final = sum(1 for g in games if g["status"] == "final")
