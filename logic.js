@@ -95,7 +95,7 @@ function feed(P,S,O,seen={}){
       t+=W.length?`${win} backers split ${pot} pts (+${f1(pot/W.length)} each).`:`Nobody had ${win}. The pot vanishes like a beer at the second intermission.`;
       for(const id of locks)t+=P[id].picks[g.id]===r?` 🔒 ${P[id].name}'s lock CASHES, double points!`:` 💥 ${P[id].name}'s lock goes up in smoke.`;
       E.push({key:'f:'+g.id,ts,kind:'final',gid:g.id,side:r,team:win,ids:W,vs:r==='H'?A:H,text:t,pts:pot/Math.max(1,W.length),
-        short:`${dog?'⚡':'🏁'} ${win} wins ${Math.max(s.as,s.hs)}–${Math.min(s.as,s.hs)}${s.period>4?' SO':s.period>3?' OT':''} · `+(W.length?`+${f1(pot/W.length)} to ${W.length}`:'nobody had it')+(locks.length?' 🔒':'')});
+        short:`${dog?'⚡':'🏁'} ${win} wins ${Math.max(s.as,s.hs)}–${Math.min(s.as,s.hs)}${s.period>4?' SO':s.period>3?' OT':''} · `+(W.length?`${names(P,W)} +${f1(pot/W.length)}`:'nobody had it')+(locks.filter(id=>P[id].picks[g.id]===r).length?' · 🔒 '+names(P,locks.filter(id=>P[id].picks[g.id]===r))+' doubled':'')});
     }
   }
   // replay finals in order for lead changes and eliminations

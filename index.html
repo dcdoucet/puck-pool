@@ -37,20 +37,22 @@ input:focus{outline:2px solid var(--acc);border-color:transparent}
 .sub{font-size:14px;color:var(--mute)}
 .share{color:var(--acc);font-weight:650;min-height:44px;padding:0 4px}
 .list{background:var(--card);border-radius:14px;overflow:hidden}
-.p{display:grid;grid-template-columns:28px 36px 1fr auto auto;gap:10px;align-items:center;width:100%;text-align:left;padding:12px;border-bottom:1px solid var(--line);min-height:64px}
+.p{display:grid;grid-template-columns:24px 34px 1fr auto auto auto;gap:10px;align-items:center;width:100%;text-align:left;padding:12px;border-bottom:1px solid var(--line);min-height:64px}
 .p:last-child{border-bottom:0}
 .p.mine{background:var(--accbg)}
 .p .rk{color:var(--mute);font-weight:650;text-align:center}
 .p .n{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.p .pts{font-weight:750;font-size:19px;min-width:40px;text-align:right}
-.p .w{font-weight:650;color:var(--acc);min-width:52px;text-align:right}
+.p .pts{font-weight:750;font-size:19px;min-width:36px;text-align:right}
+.p .mx{color:var(--mute);min-width:40px;text-align:right;font-size:16px}
+.p .w{font-weight:650;color:var(--acc);min-width:48px;text-align:right}
+.add{display:block;width:100%;margin-top:10px;min-height:50px;border-radius:12px;border:1.5px dashed var(--line);color:var(--acc);font-weight:650}
 .p.out{color:var(--mute)}.p.out .w{color:var(--mute)}
 .ex{grid-column:1/-1;padding:4px 0 2px 38px;font-size:14px;color:var(--mute)}
 .sq{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
 .sq span{width:14px;height:14px;border-radius:3px;background:var(--line)}
 .sq .g{background:var(--good)}.sq .r{background:var(--bad)}.sq .y{background:var(--mute)}.sq .lk{outline:2px solid var(--gold);outline-offset:1px}
-.colh{display:grid;grid-template-columns:28px 36px 1fr auto auto;gap:10px;padding:0 12px 6px;font-size:12px;color:var(--mute);font-weight:600}
-.colh span:nth-child(4){min-width:40px;text-align:right}.colh span:nth-child(5){min-width:52px;text-align:right}
+.colh{display:grid;grid-template-columns:24px 34px 1fr auto auto auto;gap:10px;padding:0 12px 6px;font-size:12px;color:var(--mute);font-weight:600}
+.colh span:nth-child(4){min-width:36px;text-align:right}.colh span:nth-child(5){min-width:40px;text-align:right}.colh span:nth-child(6){min-width:48px;text-align:right}
 details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px;display:flex;align-items:center;color:var(--acc);font-weight:600}
 nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;max-width:280px;min-height:58px;font-size:15px;font-weight:650;color:var(--mute);display:flex;align-items:center;justify-content:center;gap:6px}
@@ -63,14 +65,26 @@ nav em{font-style:normal;font-size:12px;background:var(--line);color:var(--ink);
 .crests{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
 .crests button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;padding:6px 0;border-radius:10px}
 .crests button.on{background:var(--accbg)}
+#board{width:100%;display:block;border-radius:14px;margin:4px 0 10px;min-height:180px;background:var(--card)}
+.fh{font-size:17px;margin:22px 2px 6px}
+.feed{list-style:none;margin:0;padding:0;background:var(--card);border-radius:14px}
+.feed li{display:flex;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:15px}
+.feed li:last-child{border:0}
+.feed time{flex:none;color:var(--mute);font-size:13px}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-150%);z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0)}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
-@media(prefers-reduced-motion:reduce){#toast{transition:none}}
+@media(prefers-reduced-motion:reduce){#board{width:100%;display:block;border-radius:14px;margin:4px 0 10px;min-height:180px;background:var(--card)}
+.fh{font-size:17px;margin:22px 2px 6px}
+.feed{list-style:none;margin:0;padding:0;background:var(--card);border-radius:14px}
+.feed li{display:flex;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:15px}
+.feed li:last-child{border:0}
+.feed time{flex:none;color:var(--mute);font-size:13px}
+#toast{transition:none}}
 </style></head><body>
 <header><h1>Puck Pool</h1><div id="hdr"></div></header>
 <main id="main"><p class="mute">Loading…</p></main>
-<nav id="nav" hidden><button data-tab="pick" id="tPick">Picks <em id="cnt"></em></button><button data-tab="table" id="tTable">Standings</button></nav>
+<nav id="nav" hidden><button data-tab="home" id="tHome">Home</button><button data-tab="pick" id="tPick">Picks <em id="cnt"></em></button></nav>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="sheet"></div>
 <script src="crest.js"></script>
@@ -86,12 +100,14 @@ const ls={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,
 const TC={EDM:'#ff4c00',CAR:'#ce1126',CHI:'#cf0a2c',CGY:'#c8102e',BUF:'#0057b8',FLA:'#c8102e',PIT:'#fcb514',NSH:'#ffb81c',WSH:'#c8102e',BOS:'#ffb81c',CBJ:'#2a5fae',TOR:'#2f6fd8',PHI:'#f74902',MTL:'#af1e2d',LAK:'#a2aaad',OTT:'#c52032',NYI:'#f47d30',DET:'#ce1126',NJD:'#ce1126',STL:'#2f6fd8',VGK:'#b4975a',WPG:'#55a0e0',ANA:'#f47a38',UTA:'#6cace4',MIN:'#2e8b57',VAN:'#00843d',SEA:'#99d9d9',SJS:'#00a3ad'};
 let ev=new Map(),P={},base={},liveS={},S={},O={},seenAt={},me=ls.get('pp_me'),tab=null,busy=false,loaded=false,lastFull=0,open=null,sheet=null,err='';
 const save=id=>{me=id;ls.set('pp_me',id)};
+const tm=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 const result=g=>PP.result(S,g),locked=g=>PP.started(S,g),mine=()=>me&&P[me];
+let joins=[];
 function build(){
-  P={};for(const e of [...ev.values()].sort((a,b)=>a.time-b.time)){let m;try{m=JSON.parse(e.message)}catch{continue}
+  P={};joins=[];for(const e of [...ev.values()].sort((a,b)=>a.time-b.time)){let m;try{m=JSON.parse(e.message)}catch{continue}
     if(!m||typeof m.p!=='string')continue;const t=e.time*1000;
-    if(m.t==='x')delete P[m.p];
-    else if(m.t==='j'&&m.n&&!P[m.p])P[m.p]={name:String(m.n).slice(0,16),picks:{},lock:null};
+    if(m.t==='x'){delete P[m.p];joins=joins.filter(j=>j.id!==m.p);continue}
+    else if(m.t==='j'&&m.n&&!P[m.p]){P[m.p]={name:String(m.n).slice(0,16),picks:{},lock:null};joins.push({id:m.p,name:P[m.p].name,ts:t})}
     else if(!P[m.p])continue;
     else if(m.t==='m'&&Number.isInteger(m.m)&&m.m>=0&&m.m<MASCOTS.length)P[m.p].mascot=m.m;
     else if(m.t==='p'){const g=GI[m.g];if(g&&(m.s==='A'||m.s==='H')&&t<g.t)P[m.p].picks[g.id]=m.s}
@@ -121,14 +137,15 @@ async function post(msg){const r=await fetch(NT,{method:'POST',body:JSON.stringi
 let tt;function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2600)}
 function render(){
   const m=mine();
-  if(loaded&&!tab)tab=m&&G.every(g=>locked(g)||m.picks[g.id])?'table':'pick';
+  if(loaded&&!tab)tab=m&&G.every(g=>locked(g)||m.picks[g.id])?'home':'pick';
   $('hdr').innerHTML=m?`<button class="me" data-x="menu" aria-label="Your team">${crest(teamOf(me,m).m,teamOf(me,m).kit,30)}${esc(m.name)}</button>`:'';
   $('nav').hidden=!m;
-  if(m){$('tPick').classList.toggle('on',tab==='pick');$('tTable').classList.toggle('on',tab==='table');
+  document.querySelector('header h1').style.visibility=m&&tab==='home'?'hidden':'';
+  if(m){$('tPick').classList.toggle('on',tab==='pick');$('tHome').classList.toggle('on',tab==='home');
     $('cnt').textContent=G.filter(g=>m.picks[g.id]).length+'/14'}
   if(!loaded){$('main').innerHTML=`<p class="mute">${err||'Loading…'}</p>`;return}
   if(!m){joinView();renderSheet();return}
-  tab==='pick'?pickView(m):tableView(m);
+  tab==='pick'?pickView(m):homeView(m);
   renderSheet();
 }
 function joinView(){
@@ -148,23 +165,21 @@ function pickView(m){
     const st=status(g),isL=m.lock===g.id;
     return `<div class="card">${st?`<div class="st"><span>${st}</span></div>`:''}<div class="row">${b('A',g.a,s?.as)}${b('H',g.h,s?.hs)}<button class="lk ${isL?'on':''}" data-lock="${g.id}" aria-label="Double points on ${g.a} at ${g.h}" aria-pressed="${isL}" ${lk||(frozen&&!isL)||!k?'disabled':''}>🔒</button></div></div>`}).join('');
 }
-function tableView(m){
-  const ids=Object.keys(P),T=PP.tally(P,S),W=PP.simulate(P,S,O),A=PP.awards(P,S,T);
-  const lead=Math.max(0,...ids.map(id=>T[id].pts));
-  const rows=ids.map(id=>({id,...T[id],w:W[id]||0,b:A[id]||[]})).sort((a,b)=>b.w-a.w||b.pts-a.pts||b.max-a.max);
-  const fin=G.filter(result).length,live=G.filter(g=>PP.isLive(S[g.id])).length;
-  const ICON={fire:'🔥',fade:'👑',sheep:'🐑',bad:'💀',round:'🍺'},LBL={fire:'On fire',fade:'Fade king',sheep:'Sheep',bad:'Bad beat',round:'Buys the first round'};
-  const pct=w=>w>=.995&&w<1?'>99%':w>0&&w<.005?'<1%':Math.round(w*100)+'%';
-  $('main').innerHTML=`<div class="bar"><div><h2>Standings</h2><div class="sub">${live?live+' live · ':''}${fin} of 14 final</div></div><button class="share" data-x="share">Share</button></div>
-    <div class="colh"><span></span><span></span><span></span><span>Pts</span><span>Win</span></div>
-    <div class="list">${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9,isO=open===r.id;
-      return `<button class="p ${r.id===me?'mine':''} ${out?'out':''}" data-open="${esc(r.id)}" aria-expanded="${isO}">
-        <span class="rk">${i+1}</span>${crest(t.m,t.kit,34)}<span class="n">${esc(teamName(p.name,t.m))}${r.b.length?' '+r.b.map(k=>ICON[k]).join(''):''}</span>
-        <span class="pts">${PP.f1(r.pts)}</span><span class="w">${out?'Out':pct(r.w)}</span>
-        ${isO?`<span class="ex">Max ${PP.f1(r.max)} pts${r.b.length?' · '+r.b.map(k=>LBL[k]).join(' · '):''}${p.lock&&locked(GI[p.lock])?' · 🔒 '+(p.picks[p.lock]==='H'?GI[p.lock].h:GI[p.lock].a):''}
-          <span class="sq">${G.map(g=>{const k=p.picks[g.id],rs=result(g);const c=!locked(g)||!k?'':rs?(rs===k?'g':'r'):'y';return `<span class="${c} ${p.lock===g.id&&locked(g)?'lk':''}"></span>`}).join('')}</span></span>`:''}
-      </button>`}).join('')||'<p class="mute" style="padding:12px">No one yet.</p>'}</div>
-    <details><summary>How scoring works</summary><p>Each game is worth 1 point for every person who picked it. Everyone who picked the winner splits those points. 🔒 doubles your share for one game. Win % comes from sportsbook odds plus live scores. Picks are hidden until each game starts.</p></details>`;
+let boardURL='',drawing=false,boardCanvas=null;
+async function drawBoard(){if(drawing)return;drawing=true;
+  try{boardCanvas=await Board.draw({P,S,O,me});boardURL=boardCanvas.toDataURL('image/jpeg',.9);const im=$('board');if(im)im.src=boardURL}catch(e){console.error(e)}drawing=false}
+function homeView(m){
+  const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out','drop'].includes(e.kind)&&e.ts<=Date.now()+60000)
+    .map(e=>e.kind==='drop'?(()=>{const lk=Object.keys(P).filter(id=>P[id].lock===e.gid&&P[id].picks[e.gid]);return lk.length?{...e,short:'🔒 '+lk.map(id=>P[id].name+' locked '+(P[id].picks[e.gid]==='H'?GI[e.gid].h:GI[e.gid].a)).join(', ')}:null})():e).filter(Boolean)
+    .concat(joins.length?[{key:'joins',ts:joins[joins.length-1].ts,short:`👋 ${joins.length} in: ${joins.map(j=>j.name).join(', ')}`}]:[])
+    .sort((a,b)=>b.ts-a.ts).slice(0,25);
+  $('main').innerHTML=`<img id="board" alt="Standings" ${boardURL?`src="${boardURL}"`:''}>
+    <button class="primary" style="width:100%" data-x="share">Share standings</button>
+    <h3 class="fh">Latest</h3>
+    ${E.length?`<ul class="feed">${E.map(e=>`<li><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></li>`).join('')}</ul>`:'<p class="mute">Results show up here as games finish.</p>'}
+    <button class="add" data-x="add">+ Add player</button>
+    <details><summary>How scoring works</summary><p>Each game is worth 1 point for every person who picked it. Everyone who picked the winner splits those points. 🔒 doubles your share for one game. Max is the most you can still finish with. Win % comes from sportsbook odds plus live scores. Picks are hidden until each game starts.</p></details>`;
+  drawBoard();
 }
 function renderSheet(){
   const m=mine(),el=$('sheet');if(!sheet||!m){el.innerHTML='';return}
@@ -187,7 +202,7 @@ function notify(){
   msgs.slice(-3).forEach((t,i)=>setTimeout(()=>toast(t),i*2900));
 }
 async function share(){
-  const cv=await Board.draw({P,S,O,me});const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',.92));
+  const cv=boardCanvas||await Board.draw({P,S,O,me});const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',.92));
   const file=new File([blob],'puck-pool.jpg',{type:'image/jpeg'});
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});return}}catch(e){if(e.name==='AbortError')return}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='puck-pool.jpg';document.body.appendChild(a);a.click();a.remove();
@@ -202,11 +217,11 @@ document.addEventListener('click',async e=>{
   if(x==='close'){if(e.target===b){sheet=null;renderSheet()}return}
   if(b.dataset.tab){tab=b.dataset.tab;open=null;render();scrollTo(0,0);return}
   if(b.dataset.claim){save(b.dataset.claim);tab=null;render();return}
-  if(b.dataset.open){open=open===b.dataset.open?null:b.dataset.open;render();return}
   if(x==='menu'){sheet='menu';renderSheet();return}
   if(x==='team'){sheet='team';renderSheet();return}
   if(x==='out'){sheet=null;me=null;ls.del('pp_me');tab=null;render();return}
   if(x==='share'){share();return}
+  if(x==='add'){me=null;ls.del('pp_me');tab=null;sheet=null;render();setTimeout(()=>$('nick')&&$('nick').focus(),50);return}
   if(busy)return;
   if(x==='del'){if(!confirm('Remove '+P[me].name+' and all their picks?'))return;busy=true;
     try{await post({t:'x',p:me});me=null;ls.del('pp_me');sheet=null;tab=null}catch{toast('Couldn’t remove. Try again.')}busy=false;render();return}
