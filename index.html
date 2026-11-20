@@ -273,6 +273,7 @@ document.addEventListener('submit',async e=>{
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button,[data-x="close"],h1[data-tab]');if(!b)return;const x=b.dataset.x;
   if(x==='close'){if(e.target===b){sheet=null;renderSheet()}return}
+  if(b.dataset.tab&&!mine()){const pv=ls.get('pp_prev');if(pv&&P[pv]){save(pv);tab='home';render();scrollTo(0,0)}return}
   if(b.dataset.tab){tab=b.dataset.tab;open=null;render();scrollTo(0,0);return}
   if(b.dataset.claim){save(b.dataset.claim);tab=null;render();return}
   if(b.dataset.pl){sheet='pl:'+b.dataset.pl;renderSheet();return}
@@ -280,9 +281,9 @@ document.addEventListener('click',async e=>{
   if(x==='team'){sheet='team';renderSheet();return}
   if(x==='rules'){sheet='rules';renderSheet();return}
   if(x==='rules'&&!mine())return;
-  if(x==='out'){sheet=null;me=null;ls.del('pp_me');tab=null;render();return}
+  if(x==='out'){if(me)ls.set('pp_prev',me);sheet=null;me=null;ls.del('pp_me');tab=null;render();return}
   if(x==='share'){share();return}
-  if(x==='add'){me=null;ls.del('pp_me');tab=null;sheet=null;render();setTimeout(()=>$('nick')&&$('nick').focus(),50);return}
+  if(x==='add'){if(me)ls.set('pp_prev',me);me=null;ls.del('pp_me');tab=null;sheet=null;render();setTimeout(()=>$('nick')&&$('nick').focus(),50);return}
   if(busy)return;
   if(x==='del'){if(!confirm('Remove '+P[me].name+' and all their picks?'))return;busy=true;
     try{await post({t:'x',p:me});me=null;ls.del('pp_me');sheet=null;tab=null}catch{toast('Couldn’t remove. Try again.')}busy=false;render();return}
