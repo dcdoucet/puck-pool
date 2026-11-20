@@ -243,7 +243,13 @@ function homeView(m){
     ${n<14?`<button class="primary pill" data-tab="pick">Make your picks · ${n}/14</button>`:`<div class="ok">✓ All 14 picked</div>`}`;
   else hero=`<div class="big">${mr&&mr.max<lead-1e-9?'Out':'#'+(mi+1)}</div><div class="cap">${PP.f1(mr?mr.pts:0)} pts · ${pct(mr?mr.w:0)} to win · ${fin===14?'Final':live?live+' live':fin+'/14 final'}</div>`;
   if(m)hero+=`<div class="links">${n>=14||Date.now()>=FIRST?`<button class="lnk" data-tab="pick">${Date.now()>=FIRST?'Your picks':'Edit picks'}</button><span class="dim">·</span>`:''}<button class="lnk" data-x="rules">How it works</button></div>`;
-  const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).sort((a,b)=>b.ts-a.ts).slice(0,3);
+  // awards go in the feed, stamped when this phone first saw them
+  const AWT={fire:n=>`🔥 ${n} on fire: 3+ in a row`,fade:n=>`👑 Fade King: ${n}, cashed against the crowd`,sheep:n=>`🐑 Sheep: ${n}, went with the crowd`,bad:n=>`💀 Bad beat: ${n}, blew a 3rd-period lead`,round:n=>`🍺 ${n} buys the first round`};
+  let seenAw={};try{seenAw=JSON.parse(ls.get('pp_aw')||'{}')}catch{}
+  const byK={};for(const id in A)for(const k of A[id])(byK[k]=byK[k]||[]).push(id);
+  const AE=Object.entries(byK).map(([k,ids])=>{const key=k+':'+ids.sort().join(',');if(!seenAw[key])seenAw[key]=Date.now();const ns=ids.map(id=>P[id].name);return {key,ts:seenAw[key],short:AWT[k](ns.length>1?ns.slice(0,-1).join(', ')+' & '+ns.at(-1):ns[0])}});
+  ls.set('pp_aw',JSON.stringify(seenAw));
+  const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).concat(AE).sort((a,b)=>b.ts-a.ts).slice(0,5);
   $('main').innerHTML=`<div class="hero">${hero}</div>
     <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
     <div class="list sl"><div class="lh"><span></span><span class="pkh">Picks →</span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
