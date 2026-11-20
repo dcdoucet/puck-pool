@@ -189,7 +189,7 @@ function joinView(){
   $('main').innerHTML=`<div class="card" style="margin-top:8px"><h2 style="margin:4px 0 4px;font-size:22px">Join the pool</h2>
     <p class="mute" style="margin:0 0 12px">Saturday, Nov 21 · pick a winner in all 14 NHL games.</p>
     <form id="join" style="display:flex;gap:8px"><input id="nick" maxlength="16" placeholder="Your name" autocomplete="off" required><button class="primary">Join</button></form></div>
-    ${names.length?`<details><summary>Already joined on another phone?</summary><div class="card names">${names.map(([id,p])=>`<button data-claim="${esc(id)}">${esc(p.name)}</button>`).join('')}</div></details>`:''}`;
+`;
 }
 function status(g){const s=S[g.id];if(PP.isFinal(s))return 'Final'+(s.period>4?' · SO':s.period>3?' · OT':'');if(PP.isLive(s))return `<b>Live</b> · ${PP.per(s.period)} ${esc(s.clock||'')}`;return locked(g)?'Locked':''}
 function pickView(m){
@@ -243,8 +243,9 @@ function renderSheet(){
   el.innerHTML=`<div class="sheet" data-x="close"><div>${sheet==='team'
     ?`<b>Pick your avatar</b><div class="crests">${MASCOTS.map((n,i)=>`<button data-m="${i}" class="${i===t.m?'on':''}">${crest(i,t.kit,46)}${n}</button>`).join('')}</div>`
     :sheet.startsWith('pl:')?playerSheet(sheet.slice(3))
+    :sheet==='sw'?`<b>Switch to</b><div class="names">${Object.entries(P).filter(([id])=>id!==me).map(([id,p])=>`<button data-claim="${esc(id)}">${esc(p.name)}</button>`).join('')}</div>`
     :sheet==='rules'?`<b>How scoring works</b><ul class="rules"><li>Each game is worth 1 point for every person who picked it.</li><li>Everyone who picked the winner splits those points.</li><li>Everyone's picks are visible, so you can play the crowd. You can change a pick until that game starts.</li><li>Max is the most you can still finish with. Win % uses sportsbook odds and live scores.</li></ul>`
-    :`<div class="who">${crest(t.m,t.kit,40)}<b>${esc(teamName(m.name,t.m))}</b></div><button class="opt" data-x="team">Change avatar</button><button class="opt" data-x="add">Switch or add player</button><button class="opt danger" data-x="del">Remove ${esc(m.name)}</button>`}</div></div>`;
+    :`<div class="who">${crest(t.m,t.kit,40)}<b>${esc(teamName(m.name,t.m))}</b></div><button class="opt" data-x="team">Change avatar</button><button class="opt" data-x="add">Add player</button>${Object.keys(P).length>1?'<button class="opt" data-x="sw">Switch player</button>':''}<button class="opt danger" data-x="del">Remove ${esc(m.name)}</button>`}</div></div>`;
 }
 function notify(){
   const m=mine();if(!m)return;
@@ -275,11 +276,12 @@ document.addEventListener('click',async e=>{
   if(x==='close'){if(e.target===b){sheet=null;renderSheet()}return}
   if(b.dataset.tab&&!mine()){const pv=ls.get('pp_prev');if(pv&&P[pv]){save(pv);tab='home';render();scrollTo(0,0)}return}
   if(b.dataset.tab){tab=b.dataset.tab;open=null;render();scrollTo(0,0);return}
-  if(b.dataset.claim){save(b.dataset.claim);tab=null;render();return}
+  if(b.dataset.claim){save(b.dataset.claim);sheet=null;tab='home';render();scrollTo(0,0);return}
   if(b.dataset.pl){sheet='pl:'+b.dataset.pl;renderSheet();return}
   if(x==='menu'){sheet='menu';renderSheet();return}
   if(x==='team'){sheet='team';renderSheet();return}
   if(x==='rules'){sheet='rules';renderSheet();return}
+  if(x==='sw'){sheet='sw';renderSheet();return}
   if(x==='rules'&&!mine())return;
   if(x==='out'){if(me)ls.set('pp_prev',me);sheet=null;me=null;ls.del('pp_me');tab=null;render();return}
   if(x==='share'){share();return}
