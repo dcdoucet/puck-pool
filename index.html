@@ -29,14 +29,13 @@ tr.me td{font-weight:700}
 .out td{color:var(--mute)}
 .msg{background:var(--onbg);padding:10px 12px;border-radius:10px;margin:10px 0}
 .names button{display:block;width:100%;margin-top:6px;background:var(--onbg);color:var(--ink)}
+.done{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));width:100%;margin-top:8px;font-size:19px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.edit{width:100%;margin:6px 0 4px}
 </style></head><body><main>
 <h1>Puck Pool</h1>
-<div class="mute">NHL · Saturday, Nov 21 · 1 point per correct pick</div>
+<div class="mute">NHL · Saturday, Nov 21</div>
 <div id="me"></div>
-<div id="games"></div>
-<h2>Standings</h2>
-<table><thead><tr><th>Player</th><th>Pts</th><th>Max</th></tr></thead><tbody id="tbl"></tbody></table>
-<p class="mute" id="foot"></p>
+<div id="view"></div>
 </main>
 <script>
 {
@@ -44,7 +43,7 @@ const G=[["2026020359","EDM","CAR","2026-11-21T18:00:00Z"],["2026020360","CHI","
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const TOPIC='puckpool-614c7aa1d6ed',NT='https://ntfy.sh/'+TOPIC;
-let ev=new Map(),P={},scores={},me=null,busy=false,choosing=false,err='',loaded=false;
+let view=null,ev=new Map(),P={},scores={},me=null,busy=false,choosing=false,err='',loaded=false;
 try{me=localStorage.getItem('pp_me')}catch{}
 const save=id=>{me=id;try{localStorage.setItem('pp_me',id)}catch{}};
 const locked=g=>Date.now()>=g.t||(scores[g.id]&&!['FUT','PRE'].includes(scores[g.id].state));
@@ -76,34 +75,46 @@ async function post(msg){
   if(!r.ok)throw new Error(r.status);
   add(await r.json());build();
 }
+const fmt=n=>String(Math.round(n*10)/10);
+function tally(){
+  // each game's pot = everyone who picked it; the people who got it right split the pot
+  const T={};for(const id in P)T[id]={pts:0,max:0};
+  for(const g of G){
+    const who=Object.keys(P).filter(id=>P[id].picks[g.id]);if(!who.length)continue;
+    const pot=who.length,r=result(g);
+    if(r){const w=who.filter(id=>P[id].picks[g.id]===r);for(const id of w)T[id].pts+=pot/w.length}
+    else for(const id of who){const same=who.filter(x=>P[x].picks[g.id]===P[id].picks[g.id]).length;T[id].max+=pot/same}
+  }
+  for(const id in T)T[id].max+=T[id].pts;
+  return T;
+}
 function render(){
   const mine=me&&P[me];
+  if(loaded&&view===null)view=mine&&G.every(g=>locked(g)||mine.picks[g.id])?'table':'pick';
   let h=err?`<div class="msg">${esc(err)}</div>`:'';
   if(!loaded&&!err)h+='<div class="msg">Loading…</div>';
   else if(!mine){
     const names=Object.entries(P);
     h+=choosing?`<div class="names"><p class="mute">Tap your name:</p>${names.map(([id,p])=>`<button data-claim="${esc(id)}">${esc(p.name)}</button>`).join('')}<p><button class="link" data-x="back">Back</button></p></div>`
     :`<form id="join"><input id="nick" maxlength="16" placeholder="Your name" autocomplete="off" required><button>Join</button></form>${names.length?'<p><button class="link" data-x="claim">Already joined on another phone?</button></p>':''}`;
-  }else{
-    const n=G.filter(g=>mine.picks?.[g.id]).length;
-    h+=`<p>Picking as <b>${esc(mine.name)}</b> · ${n}/14 picked · <button class="link" data-x="out">Not you?</button></p>`;
-  }
+  }else h+=`<p>Picking as <b>${esc(mine.name)}</b> · <button class="link" data-x="out">Not you?</button></p>`;
   $('me').innerHTML=h;
-  $('games').innerHTML=mine?G.map(g=>{
-    const k=mine.picks?.[g.id],lk=locked(g),r=result(g),s=scores[g.id],sc=s&&!['FUT','PRE'].includes(s.state);
-    const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''}>${ab}${sc?` <small>${pts}</small>`:''}</button>`};
-    return `<div class="g">${b('A',g.a,s?.as)}${b('H','@ '+g.h,s?.hs)}</div>`}).join(''):'';
-  // standings
-  const left=G.filter(g=>!result(g));
-  const rows=Object.entries(P).map(([id,p])=>{let pts=0,max=0;for(const g of G){const k=p.picks?.[g.id],r=result(g);if(r){if(k===r)pts++}else if(k)max++}return{id,p,pts,max:pts+max}});
-  const lead=Math.max(0,...rows.map(r=>r.pts));
-  rows.sort((a,b)=>b.pts-a.pts||b.max-a.max||a.p.name.localeCompare(b.p.name));
-  $('tbl').innerHTML=rows.length?rows.map(r=>`<tr class="${r.id===me?'me':''} ${r.max<lead?'out':''}"><td>${esc(r.p.name)}${r.max<lead?' · out':''}</td><td>${r.pts}</td><td>${r.max}</td></tr>`).join(''):'<tr><td colspan="3" class="mute">No one yet.</td></tr>';
-  $('foot').textContent=`${left.length} of 14 games left. Max = most points still possible. Picks lock when each game starts.`;
+  if(mine&&view==='pick'){
+    $('view').innerHTML=G.map(g=>{
+      const k=mine.picks[g.id],lk=locked(g),r=result(g),s=scores[g.id],sc=s&&!['FUT','PRE'].includes(s.state);
+      const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''}>${ab}${sc?` <small>${pts}</small>`:''}</button>`};
+      return `<div class="g">${b('A',g.a,s?.as)}${b('H','@ '+g.h,s?.hs)}</div>`}).join('')+'<button class="done" data-x="done">Done</button>';
+    return;
+  }
+  const T=tally(),ids=Object.keys(P),lead=Math.max(0,...ids.map(id=>T[id].pts));
+  const rows=ids.map(id=>({id,p:P[id],...T[id]})).sort((a,b)=>b.pts-a.pts||b.max-a.max||a.p.name.localeCompare(b.p.name));
+  $('view').innerHTML=(mine?'<button class="edit" data-x="edit">Edit picks</button>':'')+
+    `<table><thead><tr><th>Player</th><th>Pts</th><th>Max</th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr class="${r.id===me?'me':''} ${r.max<lead?'out':''}"><td>${esc(r.p.name)}${r.max<lead?' · out':''}</td><td>${fmt(r.pts)}</td><td>${fmt(r.max)}</td></tr>`).join(''):'<tr><td colspan="3" class="mute">No one yet.</td></tr>'}</tbody></table>
+    <p class="mute">Each game is worth one point per person who picked it, split among everyone who got it right. Max is the most you can still finish with. Picks lock when each game starts.</p>`;
 }
 document.addEventListener('submit',async e=>{
   e.preventDefault();if(busy)return;const n=$('nick').value.trim().slice(0,16);if(!n)return;
-  busy=true;const id='p'+Math.random().toString(36).slice(2,10);save(id);
+  busy=true;view='pick';const id='p'+Math.random().toString(36).slice(2,10);save(id);
   try{await post({t:'j',p:id,n})}catch{err='Couldn’t join, try again.';me=null}
   busy=false;render();
 });
@@ -111,8 +122,10 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.x==='claim'){choosing=true;render()}
   else if(b.dataset.x==='back'){choosing=false;render()}
+  else if(b.dataset.x==='done'){view='table';render();scrollTo(0,0)}
+  else if(b.dataset.x==='edit'){view='pick';render();scrollTo(0,0)}
   else if(b.dataset.x==='out'){me=null;try{localStorage.removeItem('pp_me')}catch{};render()}
-  else if(b.dataset.claim){save(b.dataset.claim);choosing=false;render()}
+  else if(b.dataset.claim){save(b.dataset.claim);choosing=false;view=null;render()}
   else if(b.dataset.g&&!busy){
     const g=G.find(x=>x.id===b.dataset.g),side=b.dataset.s;if(!g||locked(g))return;
     busy=true;P[me].picks[g.id]=side;render();

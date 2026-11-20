@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Pool snapshot for the group-text update. Prints JSON.
+"""Scoring: each game's pot = number of people who picked it, split evenly among those who picked the winner.
+Pool snapshot for the group-text update. Prints JSON.
 Usage: python3 report.py [--test picks.json scores.json]
 Reads picks.json and scores.json from the GitHub repo via `gh api` (synced every 5 min)."""
 import json, math, random, subprocess, sys, base64, hashlib, datetime, os
@@ -61,15 +62,28 @@ def main():
         events, scores = gh("picks.json"), gh("scores.json")
     P = players_from(events)
     ids = list(P)
-    pts = {pid: sum(1 for g in G if result(scores.get(g[0])) and P[pid]["picks"].get(g[0]) == result(scores.get(g[0]))) for pid in ids}
-    mx = {pid: pts[pid] + sum(1 for g in G if not result(scores.get(g[0])) and P[pid]["picks"].get(g[0])) for pid in ids}
+    def tally(out):  # out: gid -> 'A'/'H' for decided games; pot = pickers, split among winners
+        t = {pid: 0.0 for pid in ids}
+        for gid, r in out.items():
+            who = [pid for pid in ids if P[pid]["picks"].get(gid)]
+            w = [pid for pid in who if P[pid]["picks"][gid] == r]
+            for pid in w: t[pid] += len(who)/len(w)
+        return t
+    decided = {g[0]: result(scores.get(g[0])) for g in G if result(scores.get(g[0]))}
+    pts = tally(decided)
+    mx = dict(pts)
+    for g in G:
+        if g[0] in decided: continue
+        who = [pid for pid in ids if P[pid]["picks"].get(g[0])]
+        for pid in who:
+            mx[pid] += len(who)/sum(1 for x in who if P[x]["picks"][g[0]] == P[pid]["picks"][g[0]])
     probs = [(g[0], result(scores.get(g[0])), p_home(scores.get(g[0]))) for g in G]
     N, win = 20000, {pid: 0.0 for pid in ids}
     if ids:
         for _ in range(N):
             out = {gid: r or ("H" if random.random() < ph else "A") for gid, r, ph in probs}
-            tot = {pid: sum(1 for gid in out if P[pid]["picks"].get(gid) == out[gid]) for pid in ids}
-            best = max(tot.values()); tops = [pid for pid in ids if tot[pid] == best]
+            tot = tally(out)
+            best = max(tot.values()); tops = [pid for pid in ids if abs(tot[pid] - best) < 1e-9]
             for pid in tops: win[pid] += 1/len(tops)
     games = []
     for g in G:
@@ -81,7 +95,7 @@ def main():
                       "period": s.get("period") if st == "live" else None, "clock": s.get("clock") if st == "live" else None,
                       "winner": (g[2] if r == "H" else g[1]) if r else None, "home_win_chance": round(p_home(s),3),
                       "picked_" + g[1]: a, "picked_" + g[2]: h})
-    stand = sorted(({"name": P[pid]["name"], "points": pts[pid], "max_possible": mx[pid], "win_chance": round(win[pid]/N,3) if ids else 0,
+    stand = sorted(({"name": P[pid]["name"], "points": round(pts[pid],1), "max_possible": round(mx[pid],1), "win_chance": round(win[pid]/N,3) if ids else 0,
                      "odds": american(win[pid]/N) if ids else None, "picks_made": len(P[pid]["picks"])} for pid in ids),
                    key=lambda x: (-x["win_chance"], -x["points"]))
     final = sum(1 for g in games if g["status"] == "final")
