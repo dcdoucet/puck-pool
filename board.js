@@ -14,7 +14,7 @@ async function draw({P,S,O,me}){
   const {G,result,tally,simulate,awards,f1}=PP;
   const ids=Object.keys(P),T=tally(P,S),win=simulate(P,S,O),AW=awards(P,S,T);
   const lead=Math.max(0,...ids.map(id=>T[id].pts));
-  const rows=ids.map(id=>({id,p:P[id],...T[id],w:win[id]||0,t:teamOf(id,P[id]),b:AW[id]||[]})).sort((a,b)=>b.pts-a.pts||b.w-a.w||b.max-a.max);
+  const rows=ids.map(id=>({id,p:P[id],...T[id],w:win[id]||0,t:teamOf(id,P[id]),b:AW[id]||[]}));const _o=PP.rankOrder(P,S);rows.sort((a,b)=>_o.indexOf(a.id)-_o.indexOf(b.id));
   const W=1080,HEAD=190,ROW=92,PAD=40,H=HEAD+Math.max(1,rows.length)*ROW+PAD;
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;const c=cv.getContext('2d');
   const C={};await Promise.all(rows.map(async r=>C[r.id]=await dataImg('C'+r.t.m+r.t.kit,crest(r.t.m,r.t.kit,128))));

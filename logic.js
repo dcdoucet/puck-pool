@@ -39,12 +39,34 @@ function simulate(P,S,O,N=6000){
   const ids=Object.keys(P),n=ids.length;if(!n)return{};
   const ix=Object.fromEntries(ids.map((id,i)=>[id,i])),T=tally(P,S),base=new Float64Array(ids.map(id=>T[id].pts)),games=[];
   for(const g of G){if(result(S,g))continue;const {A,H}=sides(P,g),pot=A.length+H.length;if(!pot)continue;
-    const m=id=>mult(P[id],g);games.push({A:A.map(id=>[ix[id],pot/A.length*m(id)]),H:H.map(id=>[ix[id],pot/H.length*m(id)]),ph:pHome(g,S[g.id],O[g.id])})}
+    const m=id=>mult(P[id],g);games.push({gid:g.id,A:A.map(id=>[ix[id],pot/A.length*m(id)]),H:H.map(id=>[ix[id],pot/H.length*m(id)]),ph:pHome(g,S[g.id],O[g.id])})}
   const win=new Float64Array(n),t=new Float64Array(n);
-  for(let s=0;s<N;s++){t.set(base);for(const g of games){for(const [i,v] of (Math.random()<g.ph?g.H:g.A))t[i]+=v}
-    let best=-1,c=0;for(let i=0;i<n;i++){if(t[i]>best+1e-9){best=t[i];c=1}else if(Math.abs(t[i]-best)<1e-9)c++}
-    for(let i=0;i<n;i++)if(Math.abs(t[i]-best)<1e-9)win[i]+=1/c}
+  for(let s=0;s<N;s++){t.set(base);for(const g of games){const h=Math.random()<g.ph;g.last=h?'H':'A';for(const [i,v] of (h?g.H:g.A))t[i]+=v}
+    let best=-1;for(let i=0;i<n;i++)if(t[i]>best)best=t[i];
+    let tops=[];for(let i=0;i<n;i++)if(Math.abs(t[i]-best)<1e-9)tops.push(ids[i]);
+    if(tops.length>1){const out={};for(const g of G){const r=result(S,g);if(r)out[g.id]=r}for(const g of games)out[g.gid]=g.last;tops=breakTie(P,tops,out)}
+    for(const id of tops)win[ix[id]]+=1/tops.length}
   return Object.fromEntries(ids.map((id,i)=>[id,win[i]/N]));
+}
+// ---- tie-breakers ----
+// out: gid -> 'A'|'H' for decided games. Returns the subset of ids that survive the tie-breakers.
+function breakTie(P,ids,out){
+  if(ids.length<2)return ids;
+  const right=id=>G.reduce((n,g)=>n+(out[g.id]&&P[id].picks[g.id]===out[g.id]?1:0),0);
+  let best=Math.max(...ids.map(right));ids=ids.filter(id=>right(id)===best);if(ids.length<2)return ids;
+  const h2h=id=>ids.reduce((n,o)=>o===id?n:n+G.filter(g=>out[g.id]&&P[id].picks[g.id]&&P[o].picks[g.id]&&P[id].picks[g.id]!==P[o].picks[g.id]&&P[id].picks[g.id]===out[g.id]).length,0);
+  best=Math.max(...ids.map(h2h));ids=ids.filter(id=>h2h(id)===best);if(ids.length<2)return ids;
+  for(const g of [...G].reverse()){const r=out[g.id];if(!r)continue;const ks=new Set(ids.map(id=>P[id].picks[g.id]));
+    if(ks.size>1){const w=ids.filter(id=>P[id].picks[g.id]===r);if(w.length)return w}}
+  return ids;
+}
+function rankOrder(P,S){
+  const T=tally(P,S),out=Object.fromEntries(G.filter(g=>result(S,g)).map(g=>[g.id,result(S,g)]));
+  const ids=Object.keys(P).sort((a,b)=>T[b].pts-T[a].pts),res=[];
+  while(ids.length){const top=ids.filter(id=>Math.abs(T[id].pts-T[ids[0]].pts)<1e-9);
+    let rest=[...top];while(rest.length){const w=breakTie(P,rest,out);res.push(...w);rest=rest.filter(id=>!w.includes(id))}
+    ids.splice(0,top.length)}
+  return res;
 }
 // ---- awards ----
 const BADGE={fire:'🔥 ON FIRE',fade:'👑 FADE KING',sheep:'🐑 SHEEP',bad:'💀 BAD BEAT',round:'🍺 1ST ROUND'};
@@ -108,5 +130,5 @@ function feed(P,S,O,seen={}){
       text:`👾 GAME OVER: ${teamName(P[id].name,teamOf(id,P[id]).m)} are mathematically eliminated. Insert coin.`})}}
   return E.sort((a,b)=>a.ts-b.ts);
 }
-return {G,GI,isFinal,isLive,result,started,tally,simulate,pHome,prior,awards,BADGE,feed,per,f1};
+return {breakTie,rankOrder,G,GI,isFinal,isLive,result,started,tally,simulate,pHome,prior,awards,BADGE,feed,per,f1};
 })();

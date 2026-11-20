@@ -78,6 +78,23 @@ def american(p):
     if p <= 0.001: return "OFF THE BOARD"
     return f"-{round(100*p/(1-p))}" if p >= 0.5 else f"+{round(100*(1-p)/p)}"
 
+def break_tie(ids, out):
+    """Same order as the site: most correct, head-to-head on differing picks, latest differing game."""
+    right = lambda p: sum(1 for g in G if out.get(g[0]) and P_[p]["picks"].get(g[0]) == out[g[0]])
+    b = max(map(right, ids)); ids = [p for p in ids if right(p) == b]
+    if len(ids) < 2: return ids
+    def h2h(p):
+        return sum(1 for o in ids if o != p for g in G if out.get(g[0]) and P_[p]["picks"].get(g[0]) and P_[o]["picks"].get(g[0])
+                   and P_[p]["picks"][g[0]] != P_[o]["picks"][g[0]] and P_[p]["picks"][g[0]] == out[g[0]])
+    b = max(map(h2h, ids)); ids = [p for p in ids if h2h(p) == b]
+    if len(ids) < 2: return ids
+    for g in reversed(G):
+        r = out.get(g[0])
+        if r and len({P_[p]["picks"].get(g[0]) for p in ids}) > 1:
+            w = [p for p in ids if P_[p]["picks"].get(g[0]) == r]
+            if w: return w
+    return ids
+
 def main():
     if "--test" in sys.argv:
         i = sys.argv.index("--test"); events = json.load(open(sys.argv[i+1])); scores = json.load(open(sys.argv[i+2])); odds = {}
@@ -85,7 +102,8 @@ def main():
         events, scores = gh("picks.json"), gh("scores.json")
         try: odds = gh("odds.json")
         except Exception: odds = {}
-    P = players_from(events)
+    global P_
+    P = P_ = players_from(events)
     ids = list(P)
     def tally(out):  # out: gid -> 'A'/'H' for decided games; pot = pickers, split among winners
         t = {pid: 0.0 for pid in ids}
@@ -109,6 +127,7 @@ def main():
             out = {gid: r or ("H" if random.random() < ph else "A") for gid, r, ph in probs}
             tot = tally(out)
             best = max(tot.values()); tops = [pid for pid in ids if abs(tot[pid] - best) < 1e-9]
+            if len(tops) > 1: tops = break_tie(tops, out)
             for pid in tops: win[pid] += 1/len(tops)
     games = []
     for g in G:

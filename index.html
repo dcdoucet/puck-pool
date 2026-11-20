@@ -237,7 +237,7 @@ async function drawBoard(){if(drawing)return;drawing=true;
 function homeView(m){
   const ids=Object.keys(P),T=PP.tally(P,S),W=PP.simulate(P,S,O),A=PP.awards(P,S,T);
   const lead=Math.max(0,...ids.map(id=>T[id].pts));
-  const rows=ids.map(id=>({id,...T[id],w:W[id]||0,b:A[id]||[]})).sort((a,b)=>b.pts-a.pts||b.w-a.w||b.max-a.max);
+  const ord=PP.rankOrder(P,S);const rows=ord.map(id=>({id,...T[id],w:W[id]||0,b:A[id]||[]}));
   const pct=w=>w>=.995&&w<1?'>99%':w>0&&w<.005?'<1%':Math.round(w*100)+'%';
   const ICON={fire:'🔥',fade:'👑',sheep:'🐑',bad:'💀',round:'🍺'};
   const n=m?G.filter(g=>m.picks[g.id]).length:0,fin=G.filter(result).length,live=G.filter(g=>PP.isLive(S[g.id])).length;
@@ -294,7 +294,7 @@ function renderSheet(){
     ?`<b>Pick your avatar</b><div class="crests">${MASCOTS.map((n,i)=>`<button data-m="${i}" class="${i===t.m?'on':''}">${crest(i,t.kit,46)}${n}</button>`).join('')}</div>`
     :sheet.startsWith('pl:')?playerSheet(sheet.slice(3))
     :sheet==='sw'?`<b>Switch to</b><div class="names">${Object.entries(P).filter(([id])=>id!==me).map(([id,p])=>`<button data-claim="${esc(id)}">${esc(p.name)}</button>`).join('')}</div>`
-    :sheet==='rules'?`<b>How scoring works</b><ul class="rules"><li>Each game is worth 1 point for every person who picked it.</li><li>Everyone who picked the winner splits those points.</li><li>Everyone's picks are visible, so you can play the crowd. You can change a pick until that game starts.</li><li>Max is the most you can still finish with. Win % uses sportsbook odds and live scores.</li></ul>`
+    :sheet==='rules'?`<b>How scoring works</b><ul class="rules"><li>Each game is worth 1 point for every person who picked it.</li><li>Everyone who picked the winner splits those points.</li><li>Everyone's picks are visible, so you can play the crowd. You can change a pick until that game starts.</li><li>Max is the most you can still finish with. Win % uses sportsbook odds and live scores.</li><li><b>Ties for 1st:</b> most correct picks, then head-to-head on the games where the tied players picked differently, then whoever had the latest such game right. Still tied: split the pot.</li></ul>`
     :`<div class="who">${crest(t.m,t.kit,40)}<b>${esc(teamName(m.name,t.m))}</b></div><button class="opt" data-x="team">Change avatar</button><button class="opt" data-x="add">Add player</button>${Object.keys(P).length>1?'<button class="opt" data-x="sw">Switch player</button>':''}<button class="opt danger" data-x="del">Remove ${esc(m.name)}</button>`}</div></div>`;
 }
 function notify(){
