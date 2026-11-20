@@ -89,7 +89,7 @@ nav em{font-style:normal;font-size:12px;background:var(--line);color:var(--ink);
 .list .lh,.list .p{display:grid;grid-template-columns:22px 32px 1fr 40px 44px 52px;gap:10px;align-items:center;padding:0 14px}
 .list .lh{grid-template-columns:1fr 40px 44px 52px;font-size:12px;color:var(--mute);font-weight:600;min-height:32px}
 .list .lh span{text-align:right}
-.list .p{min-height:60px;border-top:1px solid var(--line)}
+.list .p{min-height:60px;border-top:1px solid var(--line);width:100%;text-align:left}
 .list .p.mine{background:var(--accbg)}.list .p.out{opacity:.5}
 .list .rk{color:var(--mute);font-weight:650;text-align:center}
 .list .n{min-width:0;display:flex;flex-direction:column}.list .n b{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.list .n small{color:var(--mute);font-size:13px}
@@ -97,6 +97,8 @@ nav em{font-style:normal;font-size:12px;background:var(--line);color:var(--ink);
 .list .f{display:flex;justify-content:space-between;gap:12px;padding:14px;border-top:1px solid var(--line);font-size:15px}.list .f:first-child{border:0}
 .list .f time{flex:none;color:var(--mute);font-size:13px}
 .who{display:flex;align-items:center;gap:10px;padding:4px 0 10px}
+.pk{max-height:60vh;overflow:auto;margin-top:4px}.pk div{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line);font-size:16px}.pk div>span:last-child{font-weight:650}
+.okc{color:var(--good)}.noc{color:var(--bad)}
 .rules{padding-left:18px;margin:10px 0 4px;font-size:15px}.rules li{margin:6px 0}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-150%);z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0)}
@@ -219,24 +221,33 @@ function homeView(m){
   // hero: one big number
   let hero;
   if(Date.now()<FIRST)hero=`<div class="big" id="cd">${left()}</div><div class="cap">until picks start locking</div>
-    ${n<14?`<button class="primary pill" data-tab="pick">Make your picks · ${n}/14</button>`:`<div class="ok">✓ All 14 picked</div>`}<div><button class="lnk" data-x="rules" style="font-size:15px">How it works</button></div>`;
+    ${n<14?`<button class="primary pill" data-tab="pick">Make your picks · ${n}/14</button>`:`<div class="ok">✓ All 14 picked</div>`}`;
   else hero=`<div class="big">${mr&&mr.max<lead-1e-9?'Out':'#'+(mi+1)}</div><div class="cap">${PP.f1(mr?mr.pts:0)} pts · ${pct(mr?mr.w:0)} to win · ${fin===14?'Final':live?live+' live':fin+'/14 final'}</div>`;
+  hero+=`<div><button class="lnk" data-x="rules" style="font-size:15px">How it works</button></div>`;
   const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).sort((a,b)=>b.ts-a.ts).slice(0,3);
   $('main').innerHTML=`<div class="hero">${hero}</div>
     <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
     <div class="list"><div class="lh"><span></span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
-      return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}"><span class="rk">${i+1}</span>${crest(t.m,t.kit,32)}
+      return `<button class="p ${r.id===me?'mine':''} ${out?'out':''}" data-pl="${esc(r.id)}" aria-label="See ${esc(p.name)}'s picks"><span class="rk">${i+1}</span>${crest(t.m,t.kit,32)}
         <span class="n"><b>${esc(p.name)}</b><small>${MASCOTS[t.m]}${r.b.length?' · '+r.b.map(k=>ICON[k]).join(''):''}</small></span>
-        <span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span></div>`}).join('')}</div>
+        <span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span></button>`}).join('')}</div>
     ${E.length?`<div class="sec"><h2>Latest</h2></div><div class="list">${E.map(e=>`<div class="f"><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></div>`).join('')}</div>`:''}`;
+}
+function playerSheet(id){
+  const p=P[id];if(!p)return '';const t=teamOf(id,p),T=PP.tally(P,S)[id],self=id===me;
+  return `<div class="who">${crest(t.m,t.kit,40)}<div><b>${esc(teamName(p.name,t.m))}</b><div class="mute">${PP.f1(T.pts)} pts · max ${PP.f1(T.max)}</div></div></div>
+  <div class="pk">${G.map(g=>{const k=p.picks[g.id],show=self||locked(g),r=result(g),s=S[g.id];
+    const pick=!k?'<span class="dim">—</span>':!show?'<span class="dim">Hidden</span>':`<span class="${r?(r===k?'okc':'noc'):''}">${k==='H'?g.h:g.a}${p.lock===g.id?' · 2×':''}${r?(r===k?' ✓':' ✗'):PP.isLive(s)?' · live':''}</span>`;
+    return `<div><span>${g.a} @ ${g.h}</span>${pick}</div>`}).join('')}</div>`;
 }
 function renderSheet(){
   const m=mine(),el=$('sheet');if(!sheet||!m){el.innerHTML='';return}
   const t=teamOf(me,m);
   el.innerHTML=`<div class="sheet" data-x="close"><div>${sheet==='team'
-    ?`<b>Pick your mascot</b><div class="crests">${MASCOTS.map((n,i)=>`<button data-m="${i}" class="${i===t.m?'on':''}">${crest(i,t.kit,46)}${n}</button>`).join('')}</div>`
+    ?`<b>Pick your avatar</b><div class="crests">${MASCOTS.map((n,i)=>`<button data-m="${i}" class="${i===t.m?'on':''}">${crest(i,t.kit,46)}${n}</button>`).join('')}</div>`
+    :sheet.startsWith('pl:')?playerSheet(sheet.slice(3))
     :sheet==='rules'?`<b>How scoring works</b><ul class="rules"><li>Each game is worth 1 point for every person who picked it.</li><li>Everyone who picked the winner splits those points.</li><li>🔒 doubles your share for one game.</li><li>Picks lock when each game starts and stay hidden until then.</li><li>Max is the most you can still finish with. Win % uses sportsbook odds and live scores.</li></ul>`
-    :`<div class="who">${crest(t.m,t.kit,40)}<b>${esc(teamName(m.name,t.m))}</b></div><button class="opt" data-x="rules">How scoring works</button><button class="opt" data-x="add">Add a player</button><button class="opt" data-x="team">Change mascot</button><button class="opt" data-x="out">Switch player</button><button class="opt danger" data-x="del">Remove ${esc(m.name)}</button>`}</div></div>`;
+    :`<div class="who">${crest(t.m,t.kit,40)}<b>${esc(teamName(m.name,t.m))}</b></div><button class="opt" data-x="team">Change avatar</button><button class="opt" data-x="add">Switch or add player</button><button class="opt danger" data-x="del">Remove ${esc(m.name)}</button>`}</div></div>`;
 }
 function notify(){
   const m=mine();if(!m)return;
@@ -267,6 +278,7 @@ document.addEventListener('click',async e=>{
   if(x==='close'){if(e.target===b){sheet=null;renderSheet()}return}
   if(b.dataset.tab){tab=b.dataset.tab;open=null;render();scrollTo(0,0);return}
   if(b.dataset.claim){save(b.dataset.claim);tab=null;render();return}
+  if(b.dataset.pl){sheet='pl:'+b.dataset.pl;renderSheet();return}
   if(x==='menu'){sheet='menu';renderSheet();return}
   if(x==='team'){sheet='team';renderSheet();return}
   if(x==='rules'){sheet='rules';renderSheet();return}
