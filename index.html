@@ -19,7 +19,7 @@ input:focus{outline:2px solid var(--acc);border-color:transparent}
 .me{display:flex;align-items:center;gap:8px;min-height:44px;font-weight:600;font-size:15px}
 .card{background:var(--card);border-radius:14px;padding:12px;margin-bottom:10px}
 .mute{color:var(--mute);font-size:14px}
-.row{display:grid;grid-template-columns:1fr 1fr 48px;gap:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .st{font-size:13px;color:var(--mute);margin:0 2px 8px;display:flex;justify-content:space-between}
 .st b{color:var(--bad);font-weight:600}
 .t{min-height:56px;border-radius:12px;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:18px}
@@ -151,7 +151,7 @@ function build(){
     else if(!P[m.p])continue;
     else if(m.t==='m'&&Number.isInteger(m.m)&&m.m>=0&&m.m<MASCOTS.length)P[m.p].mascot=m.m;
     else if(m.t==='p'){const g=GI[m.g];if(g&&(m.s==='A'||m.s==='H')&&t<g.t)P[m.p].picks[g.id]=m.s}
-    else if(m.t==='l'){const cur=GI[P[m.p].lock],nx=m.g?GI[m.g]:null;if(cur&&cur.t<=t)continue;if(m.g&&(!nx||nx.t<=t))continue;P[m.p].lock=nx?nx.id:null}}
+  }
   S={...base};for(const id in liveS)if(!S[id]||(liveS[id].u||0)>(S[id].u||0))S[id]=liveS[id];
 }
 const add=e=>{if(e&&e.id&&e.message)ev.set(e.id,e)};
@@ -193,16 +193,16 @@ function joinView(){
 }
 function status(g){const s=S[g.id];if(PP.isFinal(s))return 'Final'+(s.period>4?' · SO':s.period>3?' · OT':'');if(PP.isLive(s))return `<b>Live</b> · ${PP.per(s.period)} ${esc(s.clock||'')}`;return locked(g)?'Locked':''}
 function pickView(m){
-  const frozen=m.lock&&locked(GI[m.lock]);
+  
   const n=G.filter(g=>m.picks[g.id]).length;
-  $('main').innerHTML=`<div class="sec"><h2>Picks <span class="dim">${n}/14</span></h2><span class="dim">🔒 = 2×</span></div>`+G.map(g=>{
+  $('main').innerHTML=`<div class="sec"><h2>Picks <span class="dim">${n}/14</span></h2></div>`+G.map(g=>{
     const k=m.picks[g.id],lk=locked(g),r=result(g),s=S[g.id],sc=s&&(PP.isLive(s)||PP.isFinal(s));
     const oth=Object.keys(P).filter(id=>id!==me),nA=oth.filter(id=>P[id].picks[g.id]==='A').length,nH=oth.filter(id=>P[id].picks[g.id]==='H').length,pot=nA+nH+1;
     const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';const n=side==='A'?nA:nH;
-      const sub=sc?'':`<span class="sub">${n+(k===side?1:0)} picked · wins +${PP.f1(pot/(n+1)*(m.lock===g.id&&k===side?2:1))}</span>`;
+      const sub=sc?'':`<span class="sub">${n+(k===side?1:0)} picked · wins +${PP.f1(pot/(n+1))}</span>`;
       return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''} aria-pressed="${k===side}"><span class="tt"><i style="background:${TC[ab]}"></i>${side==='H'?'@ ':''}${ab}${sc?` <small>${pts}</small>`:''}</span>${sub}</button>`};
-    const st=status(g),isL=m.lock===g.id;
-    return `<div class="card">${st?`<div class="st"><span>${st}</span></div>`:''}<div class="row">${b('A',g.a,s?.as)}${b('H',g.h,s?.hs)}<button class="lk ${isL?'on':''}" data-lock="${g.id}" aria-label="Double points on ${g.a} at ${g.h}" aria-pressed="${isL}" ${lk||(frozen&&!isL)||!k?'disabled':''}>🔒</button></div></div>`}).join('')+'<button class="primary done" data-tab="home">Done</button>';
+    const st=status(g);
+    return `<div class="card">${st?`<div class="st"><span>${st}</span></div>`:''}<div class="row">${b('A',g.a,s?.as)}${b('H',g.h,s?.hs)}</div></div>`}).join('')+'<button class="primary done" data-tab="home">Done</button>';
 }
 let boardURL='',drawing=false,boardCanvas=null;
 async function drawBoard(){if(drawing)return;drawing=true;
@@ -234,7 +234,7 @@ function playerSheet(id){
   const p=P[id];if(!p)return '';const t=teamOf(id,p),T=PP.tally(P,S)[id],self=id===me;
   return `<div class="who">${crest(t.m,t.kit,40)}<div><b>${esc(teamName(p.name,t.m))}</b><div class="mute">${PP.f1(T.pts)} pts · max ${PP.f1(T.max)}</div></div></div>
   <div class="pk">${G.map(g=>{const k=p.picks[g.id],show=true,r=result(g),s=S[g.id];
-    const pick=!k?'<span class="dim">—</span>':!show?'<span class="dim">Hidden</span>':`<span class="${r?(r===k?'okc':'noc'):''}">${k==='H'?g.h:g.a}${p.lock===g.id&&(self||locked(g))?' · 2×':''}${r?(r===k?' ✓':' ✗'):PP.isLive(s)?' · live':''}</span>`;
+    const pick=!k?'<span class="dim">—</span>':!show?'<span class="dim">Hidden</span>':`<span class="${r?(r===k?'okc':'noc'):''}">${k==='H'?g.h:g.a}${r?(r===k?' ✓':' ✗'):PP.isLive(s)?' · live':''}</span>`;
     return `<div><span>${g.a} @ ${g.h}</span>${pick}</div>`}).join('')}</div>`;
 }
 function renderSheet(){
@@ -243,7 +243,7 @@ function renderSheet(){
   el.innerHTML=`<div class="sheet" data-x="close"><div>${sheet==='team'
     ?`<b>Pick your avatar</b><div class="crests">${MASCOTS.map((n,i)=>`<button data-m="${i}" class="${i===t.m?'on':''}">${crest(i,t.kit,46)}${n}</button>`).join('')}</div>`
     :sheet.startsWith('pl:')?playerSheet(sheet.slice(3))
-    :sheet==='rules'?`<b>How scoring works</b><ul class="rules"><li>Each game is worth 1 point for every person who picked it.</li><li>Everyone who picked the winner splits those points.</li><li>🔒 doubles your share for one game.</li><li>Everyone's picks are visible, so you can play the crowd. Picks lock when each game starts. Locks stay secret until puck drop.</li><li>Max is the most you can still finish with. Win % uses sportsbook odds and live scores.</li></ul>`
+    :sheet==='rules'?`<b>How scoring works</b><ul class="rules"><li>Each game is worth 1 point for every person who picked it.</li><li>Everyone who picked the winner splits those points.</li><li>Everyone's picks are visible, so you can play the crowd. You can change a pick until that game starts.</li><li>Max is the most you can still finish with. Win % uses sportsbook odds and live scores.</li></ul>`
     :`<div class="who">${crest(t.m,t.kit,40)}<b>${esc(teamName(m.name,t.m))}</b></div><button class="opt" data-x="team">Change avatar</button><button class="opt" data-x="add">Switch or add player</button><button class="opt danger" data-x="del">Remove ${esc(m.name)}</button>`}</div></div>`;
 }
 function notify(){
@@ -253,7 +253,7 @@ function notify(){
   const msgs=[];
   for(const e of E){if(seen.has(e.key)||e.ts>Date.now()+60000)continue;seen.add(e.key);
     const k=e.gid&&m.picks[e.gid];
-    if(e.kind==='final'&&k)msgs.push(k===e.side?`✅ ${e.team} won · +${PP.f1(e.pts*(m.lock===e.gid?2:1))} pts`:`❌ ${e.team} won · no points`);
+    if(e.kind==='final'&&k)msgs.push(k===e.side?`✅ ${e.team} won · +${PP.f1(e.pts)} pts`:`❌ ${e.team} won · no points`);
     if(e.kind==='lead'&&e.ids.includes(me))msgs.push('👑 You’re in 1st');
     if(e.kind==='out'&&e.ids.includes(me))msgs.push('You’re out of contention');}
   ls.set('pp_seen',JSON.stringify([...seen].slice(-600)));
@@ -288,8 +288,6 @@ document.addEventListener('click',async e=>{
     try{await post({t:'x',p:me});me=null;ls.del('pp_me');sheet=null;tab=null}catch{toast('Couldn’t remove. Try again.')}busy=false;render();return}
   const act=async(fn,msg,ok)=>{busy=true;fn();render();try{await post(msg);toast(ok)}catch{toast('Didn’t save. Tap again.');build()}busy=false;render()};
   if(b.dataset.m){const m=+b.dataset.m;sheet=null;await act(()=>{P[me].mascot=m},{t:'m',p:me,m},'Saved ✓');return}
-  if(b.dataset.lock){const g=GI[b.dataset.lock];if(!g||locked(g))return;const nx=P[me].lock===g.id?null:g.id;
-    await act(()=>{P[me].lock=nx},{t:'l',p:me,g:nx},nx?'🔒 Double points on '+(P[me].picks[g.id]==='H'?g.h:g.a):'Lock removed');return}
   if(b.dataset.g){const g=GI[b.dataset.g],side=b.dataset.s;if(!g||locked(g))return;
     await act(()=>{P[me].picks[g.id]=side},{t:'p',p:me,g:g.id,s:side},'Saved ✓');return}
 });

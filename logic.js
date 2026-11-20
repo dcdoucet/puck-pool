@@ -6,7 +6,7 @@ const isFinal=s=>!!s&&['FINAL','OFF'].includes(s.state);
 const isLive=s=>!!s&&['LIVE','CRIT'].includes(s.state);
 const result=(S,g)=>{const s=S[g.id];return isFinal(s)?(s.hs>s.as?'H':'A'):null};
 const started=(S,g)=>Date.now()>=g.t||(!!S[g.id]&&!['FUT','PRE',undefined].includes(S[g.id].state));
-const mult=(p,g)=>p.lock===g.id&&p.picks[g.id]?2:1;
+const mult=()=>1;
 function sides(P,g){const A=[],H=[];for(const id in P){const k=P[id].picks[g.id];if(k==='A')A.push(id);else if(k==='H')H.push(id)}return{A,H}}
 function tally(P,S){
   const T={};for(const id in P)T[id]={pts:0,max:0,hist:[]};

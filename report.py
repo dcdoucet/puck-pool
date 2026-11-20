@@ -30,11 +30,6 @@ def players_from(events):
         elif m.get("t") == "m" and m["p"] in P and isinstance(m.get("m"), int) and 0 <= m["m"] < len(MASCOTS): P[m["p"]]["mascot"] = m["m"]
         elif m.get("t") == "j" and m.get("n") and m["p"] not in P:
             P[m["p"]] = {"name": str(m["n"])[:16], "picks": {}}
-        elif m.get("t") == "l" and m["p"] in P:
-            cur, nx = P[m["p"]].get("lock"), m.get("g")
-            if cur and START[cur] <= e["time"]: continue
-            if nx and (nx not in START or START[nx] <= e["time"]): continue
-            P[m["p"]]["lock"] = nx
         elif m.get("t") == "p" and m["p"] in P and m.get("g") in START and m.get("s") in ("A","H") and e["time"] < START[m["g"]]:
             P[m["p"]]["picks"][m["g"]] = m["s"]
     return P
