@@ -1,0 +1,18 @@
+name: live
+on:
+  schedule:
+    - cron: "50 17 21 11 *"
+    - cron: "45 23 21 11 *"
+  workflow_dispatch:
+    inputs:
+      minutes:
+        default: "350"
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 live.py
+        env:
+          BUDGET_MIN: ${{ inputs.minutes }}

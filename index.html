@@ -1,180 +1,264 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12002b">
 <title>Puck Pool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-:root{color-scheme:light dark;--bg:#fff;--ink:#111;--mute:#777;--line:#e3e3e3;--on:#1d4ed8;--onbg:#e6edff;--good:#0f7a3e;--bad:#b3261e}
-@media(prefers-color-scheme:dark){:root{--bg:#0e1116;--ink:#eee;--mute:#999;--line:#2a2f37;--on:#6c9bff;--onbg:#1a2747;--good:#4ad08a;--bad:#ff7b72}}
+:root{--bg:#12002b;--card:#1b0840;--ink:#f3eaff;--mute:#b9a6e8;--line:#3a2266;--pink:#ff2a6d;--cyan:#05d9e8;--gold:#f9c80e;--good:#22e07a;--bad:#ff5c7a;--px:"Press Start 2P",monospace}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.4 system-ui,-apple-system,sans-serif;-webkit-text-size-adjust:100%}
-main{max-width:520px;margin:auto;padding:16px max(16px,env(safe-area-inset-left)) calc(32px + env(safe-area-inset-bottom))}
-h1{font-size:26px;margin:4px 0 2px}h2{font-size:19px;margin:28px 0 8px}
+html{background:var(--bg)}
+body{margin:0;color:var(--ink);font:17px/1.4 system-ui,-apple-system,sans-serif;-webkit-text-size-adjust:100%;
+  background:radial-gradient(120% 60% at 50% -10%,#4a0a6b 0,transparent 60%),var(--bg);min-height:100vh}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);z-index:50}
+main{max-width:540px;margin:auto;padding:calc(54px + env(safe-area-inset-top)) max(14px,env(safe-area-inset-left)) calc(32px + env(safe-area-inset-bottom))}
+/* ticker */
+#ticker{position:fixed;top:0;left:0;right:0;z-index:40;background:#0a0018;border-bottom:3px solid var(--pink);box-shadow:0 0 18px rgba(255,42,109,.6);padding-top:env(safe-area-inset-top);overflow:hidden;white-space:nowrap}
+#ticker b{position:absolute;left:0;top:env(safe-area-inset-top);bottom:0;z-index:2;background:var(--pink);color:#fff;font:10px var(--px);padding:0 10px;display:flex;align-items:center}
+.tk{display:inline-block;padding:11px 0 11px 100%;font:600 15px system-ui;color:var(--gold);animation:tk linear infinite}
+@keyframes tk{to{transform:translateX(-100%)}}
+h1{font:24px/1.2 var(--px);margin:6px 0 6px;color:#fff;text-shadow:0 0 12px var(--cyan),3px 3px 0 var(--pink)}
+.sub{font:9px/1.6 var(--px);color:var(--gold);letter-spacing:.5px}
+h2{font:12px var(--px);color:var(--cyan);margin:26px 0 10px;text-shadow:0 0 8px rgba(5,217,232,.6)}
 .mute{color:var(--mute);font-size:15px}
 input,button{font:inherit;border-radius:10px;min-height:48px}
-input{width:100%;padding:10px 12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:17px}
-button{border:0;background:var(--on);color:#fff;font-weight:600;padding:10px 16px;cursor:pointer}
-.link{background:none;color:var(--on);padding:0;min-height:0;font-weight:500}
-form{display:flex;gap:8px;margin-top:10px}
-.g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.t{background:var(--bg);color:var(--ink);border:2px solid var(--line);font-size:20px;font-weight:700;min-height:56px;display:flex;justify-content:center;align-items:center;gap:8px}
-.t.on{border-color:var(--on);background:var(--onbg);color:var(--on)}
-.t:disabled{opacity:.6;cursor:default}.t.on:disabled{opacity:1}
-.t.w{border-color:var(--good);color:var(--good);opacity:1}.t.l{border-color:var(--bad);color:var(--bad);opacity:1}
-.t small{font-size:15px;font-weight:500;color:var(--mute)}
-table{width:100%;border-collapse:collapse}
-td,th{padding:10px 6px;border-bottom:1px solid var(--line);text-align:right}
-th{font-size:14px;color:var(--mute);font-weight:500}
-td:first-child,th:first-child{text-align:left}
-tr.me td{font-weight:700}
-.out td{color:var(--mute)}
-.msg{background:var(--onbg);padding:10px 12px;border-radius:10px;margin:10px 0}
-.names button{display:block;width:100%;margin-top:6px;background:var(--onbg);color:var(--ink)}
+input{width:100%;padding:10px 12px;border:2px solid var(--line);background:#0c001f;color:var(--ink);font-size:17px}
+input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+button{border:0;background:var(--pink);color:#fff;font-weight:700;padding:10px 16px;cursor:pointer}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.link{background:none;color:var(--cyan);padding:0;min-height:0;font-weight:600}
+form{display:flex;gap:8px;margin-top:12px}
+.g{display:grid;grid-template-columns:1fr 1fr 52px;gap:8px;margin-bottom:10px}
+.t{background:var(--card);color:var(--ink);border:2px solid var(--line);font-size:19px;font-weight:800;min-height:58px;display:flex;justify-content:center;align-items:center;gap:6px;padding:6px}
+.t.on{border-color:var(--cyan);box-shadow:0 0 12px rgba(5,217,232,.55),inset 0 0 12px rgba(5,217,232,.25);color:#fff}
+.t:disabled{opacity:.5;cursor:default}.t.on:disabled{opacity:1}
+.t.w{border-color:var(--good);box-shadow:0 0 10px rgba(34,224,122,.5);opacity:1}.t.l{border-color:var(--bad);opacity:.6}
+.t small{font-size:15px;font-weight:600;color:var(--gold)}
+.lk{background:var(--card);border:2px dashed var(--line);font-size:20px;padding:0;filter:grayscale(1);opacity:.55}
+.lk.on{border:2px solid var(--gold);filter:none;opacity:1;box-shadow:0 0 12px rgba(249,200,14,.6)}
+.lk:disabled{opacity:.25}.lk.on:disabled{opacity:.9}
 .lg{width:34px;height:34px;flex:none}
-.nm{display:flex;align-items:center;gap:10px}
-.cr{flex:none}
-@media(prefers-color-scheme:dark){.cr{filter:drop-shadow(0 0 1.2px rgba(255,255,255,.55))}}
+.msg{background:var(--card);border:1px solid var(--line);padding:10px 12px;border-radius:10px;margin:10px 0}
+.names button{display:block;width:100%;margin-top:6px;background:var(--card);border:2px solid var(--line)}
+.nm{display:flex;align-items:center;gap:10px}.cr{flex:none;filter:drop-shadow(0 0 4px rgba(5,217,232,.5))}
 .crests{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:12px}
-.crests button{background:var(--bg);color:var(--ink);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:6px 2px;font-size:12px;font-weight:500;gap:2px}
-.crests button.on{border-color:var(--on)}
-#board{width:100%;display:block;border-radius:10px;margin:6px 0;background:#fff;min-height:200px}
-.done{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));width:100%;margin-top:8px;font-size:19px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
-.edit{width:100%;margin:6px 0 4px}
-</style></head><body><main>
-<h1>Puck Pool</h1>
-<div class="mute">NHL · Saturday, Nov 21</div>
+.crests button{background:var(--card);color:var(--ink);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:6px 2px;font-size:12px;font-weight:600;gap:2px}
+.crests button.on{border-color:var(--cyan)}
+.done{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));width:100%;margin-top:8px;font:14px var(--px);box-shadow:0 0 20px rgba(255,42,109,.7);z-index:5}
+.edit{width:100%;margin:6px 0}
+.ghost{background:transparent;border:2px solid var(--cyan);color:var(--cyan)}
+#board{width:100%;display:block;border-radius:10px;margin:8px 0;min-height:220px;background:#1b0840;border:2px solid var(--line)}
+.now{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.now div{flex:none;background:#0c001f;border:2px solid var(--line);border-radius:10px;padding:8px 10px;min-width:118px}
+.now .lv{border-color:var(--pink);box-shadow:0 0 10px rgba(255,42,109,.45)}
+.now b{display:block;font:600 16px system-ui}.now span{font:9px var(--px);color:var(--gold)}
+.feed{list-style:none;margin:0;padding:0}
+.feed li{padding:12px 0;border-bottom:1px solid var(--line);font-size:16px}
+.feed li time{display:block;font:9px var(--px);color:var(--mute);margin-bottom:5px}
+.feed li.goal{border-left:4px solid var(--pink);padding-left:10px}.feed li.final{border-left:4px solid var(--good);padding-left:10px}
+.feed li.lead{border-left:4px solid var(--gold);padding-left:10px}.feed li.out{border-left:4px solid #777;padding-left:10px}
+.hint{font-size:14px;color:var(--mute);margin:4px 0 12px}
+.snd{float:right;background:var(--card);border:2px solid var(--line);min-height:40px;padding:4px 10px;font-size:18px}
+/* flashes */
+#flash{position:fixed;inset:0;z-index:60;pointer-events:none}
+.fx{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:auto;padding:24px}
+.fx.goal{background:radial-gradient(circle,#2a0010 0,#000 75%);animation:in .15s}
+.fx.goal::before{content:"";position:absolute;inset:-50%;background:conic-gradient(from 0deg,rgba(255,0,60,.55) 0 12%,transparent 12% 50%,rgba(0,90,255,.5) 50% 62%,transparent 62%);animation:spin 1s linear infinite}
+.fx > *{position:relative}
+.big{font:clamp(44px,15vw,84px)/1 var(--px);color:var(--gold);text-shadow:4px 4px 0 var(--pink),0 0 30px #ff0;animation:pulse .35s ease-in-out infinite alternate}
+.fx .call{font:13px/1.6 var(--px);color:#fff;margin-top:18px}
+.fx .who{font:700 20px system-ui;color:#fff;margin-top:12px}
+.fx .lg{width:120px;height:80px;margin-top:16px}
+.fx.over{background:#000}
+.fx.over .big{color:var(--pink);text-shadow:4px 4px 0 #400;animation:none}
+.blink{font:14px var(--px);color:#fff;margin-top:24px;animation:blink 1s steps(1) infinite}
+.fx.lead{background:radial-gradient(circle,#3a2a00 0,#000 75%)}
+.fx.zam{background:linear-gradient(#bfe8ff,#e9f7ff);color:#12002b}
+.fx.zam .big{color:var(--pink);text-shadow:4px 4px 0 #12002b;animation:none}
+.zamboni{position:absolute;bottom:8%;left:-260px;animation:drive 3.4s linear forwards}
+.trail{position:absolute;bottom:8%;left:0;height:58px;background:linear-gradient(90deg,#fff,#d8f1ff);animation:wipe 3.4s linear forwards;opacity:.9}
+.lt{position:absolute;left:10px;right:10px;bottom:calc(18px + env(safe-area-inset-bottom));background:linear-gradient(90deg,var(--pink),#7b2ff7);color:#fff;border-radius:12px;padding:12px 14px;font:600 16px/1.35 system-ui;box-shadow:0 0 24px rgba(255,42,109,.7);animation:slide .35s ease-out;pointer-events:auto}
+.lt b{display:block;font:10px var(--px);color:var(--gold);margin-bottom:6px}
+.lt.bad{background:linear-gradient(90deg,#5a1020,#2a0a40)}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{to{transform:scale(1.08)}}@keyframes blink{50%{opacity:0}}
+@keyframes in{from{opacity:0}}@keyframes slide{from{transform:translateY(120%)}}
+@keyframes drive{to{left:110%}}@keyframes wipe{from{width:0}to{width:110%}}
+@media(prefers-reduced-motion:reduce){.tk,.big,.fx.goal::before,.blink{animation:none}.zamboni{animation-duration:.01s}}
+</style></head><body>
+<div id="ticker"><b>LIVE</b><span class="tk" id="tk">PUCK POOL · SATURDAY NIGHT · NOV 21 · INSERT COIN</span></div>
+<main>
+<button class="snd" id="snd" aria-label="Sound">🔇</button>
+<h1>PUCK POOL</h1>
+<div class="sub">SATURDAY NIGHT · NHL · NOV 21</div>
 <div id="me"></div>
 <div id="view"></div>
 </main>
+<div id="flash" aria-live="polite"></div>
 <script src="crest.js"></script>
+<script src="logic.js"></script>
 <script src="board.js"></script>
 <script>
 {
-const G=[["2026020359","EDM","CAR","2026-11-21T18:00:00Z"],["2026020360","CHI","CGY","2026-11-21T20:30:00Z"],["2026020361","BUF","FLA","2026-11-21T23:00:00Z"],["2026020362","PIT","NSH","2026-11-21T23:00:00Z"],["2026020363","WSH","BOS","2026-11-22T00:00:00Z"],["2026020364","CBJ","TOR","2026-11-22T00:00:00Z"],["2026020365","PHI","MTL","2026-11-22T00:00:00Z"],["2026020366","LAK","OTT","2026-11-22T00:00:00Z"],["2026020367","NYI","DET","2026-11-22T00:00:00Z"],["2026020368","NJD","STL","2026-11-22T00:00:00Z"],["2026020369","VGK","WPG","2026-11-22T00:00:00Z"],["2026020370","ANA","UTA","2026-11-22T02:00:00Z"],["2026020371","MIN","VAN","2026-11-22T03:00:00Z"],["2026020372","SEA","SJS","2026-11-22T03:00:00Z"]].map(([id,a,h,t])=>({id,a,h,t:Date.parse(t)}));
+const {G,GI}=PP;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const TOPIC='puckpool-614c7aa1d6ed',NT='https://ntfy.sh/'+TOPIC;
-let odds={},boardURL='',picking=false,view=null,ev=new Map(),P={},scores={},me=null,busy=false,choosing=false,err='',loaded=false;
-try{me=localStorage.getItem('pp_me')}catch{}
-const save=id=>{me=id;try{localStorage.setItem('pp_me',id)}catch{}};
-const locked=g=>Date.now()>=g.t||(scores[g.id]&&!['FUT','PRE'].includes(scores[g.id].state));
-const result=g=>{const s=scores[g.id];if(!s||!['FINAL','OFF'].includes(s.state))return null;return s.hs>s.as?'H':'A'};
+const TOPIC='puckpool-614c7aa1d6ed',LIVE=TOPIC+'-live',NT='https://ntfy.sh/'+TOPIC;
+const ls={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}},del:k=>{try{localStorage.removeItem(k)}catch{}}};
+let seenAt={},ev=new Map(),P={},base={},liveS={},S={},O={},me=ls.get('pp_me'),view=null,busy=false,choosing=false,picking=false,err='',loaded=false,lastFull=0;
+let sound=ls.get('pp_snd')==='1',boardURL='',boardCanvas=null,drawing=false;
+const save=id=>{me=id;ls.set('pp_me',id)};
+const result=g=>PP.result(S,g),locked=g=>PP.started(S,g);
+const logo=ab=>`<img class="lg" alt="" src="logos/${ab}_dark.svg" onerror="this.remove()">`;
+const tm=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 function build(){
-  // replay events in server-time order; a pick only counts if ntfy stamped it before puck drop
-  P={};const list=[...ev.values()].sort((a,b)=>a.time-b.time);
-  for(const e of list){let m;try{m=JSON.parse(e.message)}catch{continue}
-    if(!m||typeof m.p!=='string')continue;
+  P={};for(const e of [...ev.values()].sort((a,b)=>a.time-b.time)){let m;try{m=JSON.parse(e.message)}catch{continue}
+    if(!m||typeof m.p!=='string')continue;const t=e.time*1000;
     if(m.t==='x')delete P[m.p];
-    else if(m.t==='m'&&P[m.p]&&Number.isInteger(m.m)&&m.m>=0&&m.m<MASCOTS.length)P[m.p].mascot=m.m;
-    else if(m.t==='j'&&m.n&&!P[m.p])P[m.p]={name:String(m.n).slice(0,16),picks:{}};
-    else if(m.t==='p'&&P[m.p]){const g=G.find(x=>x.id===m.g);if(g&&(m.s==='A'||m.s==='H')&&e.time*1000<g.t)P[m.p].picks[g.id]=m.s}}
+    else if(m.t==='j'&&m.n&&!P[m.p])P[m.p]={name:String(m.n).slice(0,16),picks:{},lock:null};
+    else if(!P[m.p])continue;
+    else if(m.t==='m'&&Number.isInteger(m.m)&&m.m>=0&&m.m<MASCOTS.length)P[m.p].mascot=m.m;
+    else if(m.t==='p'){const g=GI[m.g];if(g&&(m.s==='A'||m.s==='H')&&t<g.t)P[m.p].picks[g.id]=m.s}
+    else if(m.t==='l'){const cur=GI[P[m.p].lock],nx=m.g?GI[m.g]:null;if(cur&&cur.t<=t)continue;if(m.g&&(!nx||nx.t<=t))continue;P[m.p].lock=nx?nx.id:null}}
+  S={...base};for(const id in liveS)if(!S[id]||(liveS[id].u||0)>(S[id].u||0))S[id]=liveS[id];
 }
 const add=e=>{if(e&&e.id&&e.message)ev.set(e.id,e)};
 async function load(){
   try{
-    const t=Date.now();
-    const [arc,live,s,o]=await Promise.all([
-      fetch('picks.json?t='+t).then(r=>r.ok?r.json():[]).catch(()=>[]),
-      fetch(NT+'/json?poll=1&since=all').then(r=>r.text()),
-      fetch('scores.json?t='+t).then(r=>r.json()).catch(()=>({})),
-      fetch('odds.json?t='+t).then(r=>r.json()).catch(()=>({}))]);
-    odds=o||{};
-    (arc||[]).forEach(add);
-    live.split('\n').forEach(l=>{if(!l)return;try{const e=JSON.parse(l);if(e.event==='message')add(e)}catch{}});
-    scores=s||{};err='';loaded=true;
-  }catch(e){err="Can't load right now. Try again in a minute."}
-  build();render();
+    const t=Date.now(),full=t-lastFull>55000||!loaded;
+    const [nt,arc,s,o]=await Promise.all([
+      fetch(`https://ntfy.sh/${TOPIC},${LIVE}/json?poll=1&since=all`).then(r=>r.text()),
+      full?fetch('picks.json?t='+t).then(r=>r.ok?r.json():[]).catch(()=>[]):null,
+      full?fetch('scores.json?t='+t).then(r=>r.json()).catch(()=>null):null,
+      full?fetch('odds.json?t='+t).then(r=>r.json()).catch(()=>null):null]);
+    if(full){(arc||[]).forEach(add);if(s)base=s;if(o)O=o;lastFull=t}
+    for(const l of nt.split('\n')){if(!l)continue;let e;try{e=JSON.parse(l)}catch{continue}if(e.event!=='message')continue;
+      if(e.topic===LIVE){try{const m=JSON.parse(e.message),t=e.time*1000;for(const id in m.g||{}){const x=m.g[id];
+        (x.goals||[]).forEach((_,i)=>{const k='g:'+id+':'+i;if(!seenAt[k]||t<seenAt[k])seenAt[k]=t});
+        if(PP.isFinal(x)&&(!seenAt['f:'+id]||t<seenAt['f:'+id]))seenAt['f:'+id]=t;
+        if(!liveS[id]||(x.u||0)>=(liveS[id].u||0))liveS[id]=x}}catch{}}
+      else add(e)}
+    err='';loaded=true;
+  }catch(e){err="Can't load right now. Trying again…"}
+  build();render();news();
 }
-async function post(msg){
-  const r=await fetch(NT,{method:'POST',body:JSON.stringify(msg)});
-  if(!r.ok)throw new Error(r.status);
-  add(await r.json());build();
-}
-const dark=matchMedia('(prefers-color-scheme: dark)').matches;
-const logo=ab=>`<img class="lg" alt="" src="logos/${ab}_${dark?'dark':'light'}.svg" onerror="this.remove()">`;
-let drawing=false,boardCanvas=null;
-async function drawBoard(){
-  if(drawing)return;drawing=true;
-  try{boardCanvas=await Board.draw({G,P,scores,odds,result,locked,me});boardURL=boardCanvas.toDataURL('image/jpeg',.9);const im=$('board');if(im)im.src=boardURL}catch(e){console.error(e)}
-  drawing=false;
-}
-async function shareBoard(){
-  if(!boardCanvas)return;
-  const blob=await new Promise(r=>boardCanvas.toBlob(r,'image/jpeg',.9));
-  const file=new File([blob],'puck-pool.jpg',{type:'image/jpeg'});
-  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});return}}catch(e){if(e.name==='AbortError')return}
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='puck-pool.jpg';document.body.appendChild(a);a.click();a.remove();
-}
-const fmt=n=>String(Math.round(n*10)/10);
-function tally(){
-  // each game's pot = everyone who picked it; the people who got it right split the pot
-  const T={};for(const id in P)T[id]={pts:0,max:0};
-  for(const g of G){
-    const who=Object.keys(P).filter(id=>P[id].picks[g.id]);if(!who.length)continue;
-    const pot=who.length,r=result(g);
-    if(r){const w=who.filter(id=>P[id].picks[g.id]===r);for(const id of w)T[id].pts+=pot/w.length}
-    else for(const id of who){const same=who.filter(x=>P[x].picks[g.id]===P[id].picks[g.id]).length;T[id].max+=pot/same}
-  }
-  for(const id in T)T[id].max+=T[id].pts;
-  return T;
-}
+async function post(msg){const r=await fetch(NT,{method:'POST',body:JSON.stringify(msg)});if(!r.ok)throw new Error(r.status);add(await r.json());build()}
+// ---------- render ----------
 function render(){
   const mine=me&&P[me];
   if(loaded&&view===null)view=mine&&G.every(g=>locked(g)||mine.picks[g.id])?'table':'pick';
   let h=err?`<div class="msg">${esc(err)}</div>`:'';
-  if(!loaded&&!err)h+='<div class="msg">Loading…</div>';
-  else if(!mine){
-    const names=Object.entries(P);
+  if(!loaded&&!err)h+='<div class="msg">Loading… insert coin</div>';
+  else if(!mine){const names=Object.entries(P);
     h+=choosing?`<div class="names"><p class="mute">Tap your name:</p>${names.map(([id,p])=>`<button data-claim="${esc(id)}">${esc(p.name)}</button>`).join('')}<p><button class="link" data-x="back">Back</button></p></div>`
-    :`<form id="join"><input id="nick" maxlength="16" placeholder="Your name" autocomplete="off" required><button>Join</button></form>${names.length?'<p><button class="link" data-x="claim">Already joined on another phone?</button></p>':''}`;
-  }else{
-    const T=teamOf(me,mine);
-    h+=`<div class="nm" style="margin:12px 0">${crest(T.m,T.kit,48)}<div><b>${esc(teamName(mine.name,T.m))}</b><div class="mute"><button class="link" data-x="team">Change team</button> · <button class="link" data-x="out">Not you?</button> · <button class="link" data-x="del">Remove me</button></div></div></div>`;
-    if(picking)h+=`<div class="crests">${MASCOTS.map((n,i)=>`<button data-m="${i}" class="${i===T.m?'on':''}">${crest(i,T.kit,52)}<span>${n}</span></button>`).join('')}</div>`;
-  }
+    :`<form id="join"><input id="nick" maxlength="16" placeholder="Your name" autocomplete="off" required><button>JOIN</button></form>${names.length?'<p><button class="link" data-x="claim">Already joined on another phone?</button></p>':''}`;
+  }else{const T=teamOf(me,mine);
+    h+=`<div class="nm" style="margin:16px 0 8px">${crest(T.m,T.kit,52)}<div><b>${esc(teamName(mine.name,T.m))}</b><div class="mute"><button class="link" data-x="team">Change team</button> · <button class="link" data-x="out">Not you?</button> · <button class="link" data-x="del">Remove me</button></div></div></div>`;
+    if(picking)h+=`<div class="crests">${MASCOTS.map((n,i)=>`<button data-m="${i}" class="${i===T.m?'on':''}">${crest(i,T.kit,52)}<span>${n}</span></button>`).join('')}</div>`;}
   $('me').innerHTML=h;
   if(mine&&view==='pick'){
-    $('view').innerHTML=G.map(g=>{
-      const k=mine.picks[g.id],lk=locked(g),r=result(g),s=scores[g.id],sc=s&&!['FUT','PRE'].includes(s.state);
+    const lkFrozen=mine.lock&&locked(GI[mine.lock]);
+    $('view').innerHTML='<p class="hint">Tap 🔒 on one game for double points. Nobody sees it until puck drop.</p>'+G.map(g=>{
+      const k=mine.picks[g.id],lk=locked(g),r=result(g),s=S[g.id],sc=s&&(PP.isLive(s)||PP.isFinal(s));
       const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''}>${logo(ab)}${side==='H'?'@ ':''}${ab}${sc?` <small>${pts}</small>`:''}</button>`};
-      return `<div class="g">${b('A',g.a,s?.as)}${b('H',g.h,s?.hs)}</div>`}).join('')+'<button class="done" data-x="done">Done</button>';
+      const isL=mine.lock===g.id;
+      return `<div class="g">${b('A',g.a,s?.as)}${b('H',g.h,s?.hs)}<button class="lk ${isL?'on':''}" data-lock="${g.id}" aria-label="Lock ${g.a} at ${g.h}" aria-pressed="${isL}" ${lk||lkFrozen&&!isL||!k?'disabled':''}>🔒</button></div>`}).join('')+'<button class="done" data-x="done">DONE</button>';
     return;
   }
-  $('view').innerHTML=(mine?'<button class="edit" data-x="edit">Edit picks</button>':'')+
-    `<img id="board" alt="Pool standings" ${boardURL?`src="${boardURL}"`:''}><button class="edit" data-x="share">Save / share image</button><p class="mute">Or press and hold the image to save it. Updates every 30 seconds.</p>`;
+  const lv=G.filter(g=>PP.isLive(S[g.id])||PP.isFinal(S[g.id]));
+  const now=lv.length?`<h2>ON NOW</h2><div class="now">${lv.sort((a,b)=>PP.isLive(S[b.id])-PP.isLive(S[a.id])).map(g=>{const s=S[g.id];return `<div class="${PP.isLive(s)?'lv':''}"><b>${g.a} ${s.as} · ${g.h} ${s.hs}</b><span>${PP.isFinal(s)?'FINAL'+(s.period>4?' SO':s.period>3?' OT':''):s.inter?'INT '+PP.per(s.period):PP.per(s.period)+' '+esc(s.clock||'')}</span></div>`}).join('')}</div>`:'';
+  const E=PP.feed(P,S,O,seenAt).filter(e=>e.ts<=Date.now()+60000).reverse().slice(0,40);
+  $('view').innerHTML=(mine?'<button class="edit ghost" data-x="edit">EDIT PICKS</button>':'')+now+
+    `<h2>STANDINGS</h2><img id="board" alt="Pool standings" ${boardURL?`src="${boardURL}"`:''}><button class="edit" data-x="share">SAVE / SHARE IMAGE</button><p class="mute">Or press and hold the image to save it.</p>
+    <h2>RINKSIDE WIRE</h2>${E.length?`<ul class="feed">${E.map(e=>`<li class="${e.kind}"><time>${tm(e.ts)}</time>${esc(e.text)}</li>`).join('')}</ul>`:'<p class="mute">The wire goes live at puck drop, 10:00 AM PT.</p>'}`;
   drawBoard();
-
 }
+function ticker(){
+  const live=G.filter(g=>S[g.id]&&(PP.isLive(S[g.id])||PP.isFinal(S[g.id]))).map(g=>{const s=S[g.id];return `${g.a} ${s.as} ${g.h} ${s.hs} ${PP.isFinal(s)?'F':PP.per(s.period)}`});
+  const E=PP.feed(P,S,O,seenAt).slice(-8).reverse().map(e=>e.text);
+  const txt=[...live,...E].join('   ★   ')||'PUCK POOL · SATURDAY NIGHT · FIRST PUCK 10:00 AM PT · INSERT COIN';
+  const el=$('tk');if(el.textContent!==txt){el.textContent=txt;el.style.animationDuration=Math.max(18,txt.length/7)+'s'}
+}
+async function drawBoard(){
+  if(drawing)return;drawing=true;
+  try{boardCanvas=await Board.draw({P,S,O,me});boardURL=boardCanvas.toDataURL('image/jpeg',.9);const im=$('board');if(im)im.src=boardURL}catch(e){console.error(e)}
+  drawing=false;
+}
+async function shareBoard(){
+  if(!boardCanvas)return;const blob=await new Promise(r=>boardCanvas.toBlob(r,'image/jpeg',.9));
+  const file=new File([blob],'puck-pool.jpg',{type:'image/jpeg'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});return}}catch(e){if(e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='puck-pool.jpg';document.body.appendChild(a);a.click();a.remove();
+}
+// ---------- live flashes ----------
+let Q=[],playing=false;
+function news(){
+  ticker();
+  const E=PP.feed(P,S,O,seenAt),seen=new Set(JSON.parse(ls.get('pp_seen')||'[]'));
+  if(!ls.get('pp_seen_init')){for(const e of E)if(e.ts<Date.now()-20*60000)seen.add(e.key);ls.set('pp_seen_init','1')}
+  const fresh=E.filter(e=>!seen.has(e.key)&&e.ts<=Date.now()+60000);
+  for(const e of fresh)seen.add(e.key);
+  ls.set('pp_seen',JSON.stringify([...seen].slice(-600)));
+  Q.push(...fresh.slice(-6));if(!playing)next();
+}
+const mine=()=>me&&P[me];
+function next(){
+  const e=Q.shift();if(!e){playing=false;return}playing=true;
+  const m=mine(),myPick=m&&e.gid?m.picks[e.gid]:null,el=$('flash');
+  let html,dur=2600;
+  if(e.kind==='goal'&&myPick&&myPick===e.side){
+    html=`<div class="fx goal"><div class="big">GOAL!</div>${logo(e.team)}<div class="call">${esc(e.text.split('!')[0].replace('🚨','').trim())}!</div><div class="who">${esc(e.who||e.team)} · ${esc(e.score)}</div></div>`;dur=3400;horn();
+  }else if(e.kind==='final'&&myPick&&myPick===e.side){
+    html=`<div class="fx zam"><div class="trail"></div><div class="big">+${PP.f1(e.pts*(m.lock===e.gid?2:1))}</div><div class="call" style="color:#12002b">${esc(e.team)} WINS · ZAMBONI TIME</div>${zamboni()}</div>`;dur=3600;
+  }else if(e.kind==='out'&&e.ids.includes(me)){
+    html=`<div class="fx over"><div class="big">GAME<br>OVER</div><div class="who">${esc(teamName(m.name,teamOf(me,m).m))}</div><div class="blink">INSERT COIN</div></div>`;dur=4200;
+  }else if(e.kind==='lead'&&e.ids.includes(me)){
+    html=`<div class="fx lead"><div class="big">NEW<br>LEADER</div><div class="who">👑 ${esc(teamName(m.name,teamOf(me,m).m))}</div></div>`;dur=3200;
+  }else{
+    const against=myPick&&myPick!==e.side&&(e.kind==='goal'||e.kind==='final');
+    const lab={goal:against?'UH-OH':'GOAL',final:against?'TOUGH BREAK':'FINAL',drop:'PUCK DROP',lead:'NEW LEADER',out:'GAME OVER'}[e.kind]||'WIRE';
+    html=`<div class="lt ${against?'bad':''}"><b>${lab}</b>${esc(e.text)}</div>`;dur=e.kind==='drop'?2200:3000;
+  }
+  el.innerHTML=html;el.firstElementChild.onclick=()=>{clearTimeout(el._t);el.innerHTML='';next()};
+  el._t=setTimeout(()=>{el.innerHTML='';setTimeout(next,250)},dur);
+}
+function zamboni(){ // original pixel-art ice resurfacer
+  const px=[[2,0,8,1,'#ffd23f'],[2,1,1,3,'#333'],[9,1,1,3,'#333'],[0,4,14,5,'#f9f9f9'],[0,4,14,1,'#ff2a6d'],[11,1,3,3,'#9fe7ff'],[11,1,3,1,'#05d9e8'],[1,5,9,3,'#e8e8e8'],[2,6,7,1,'#05d9e8'],[12,5,2,2,'#ffd23f'],[1,9,3,3,'#222'],[10,9,3,3,'#222'],[2,10,1,1,'#888'],[11,10,1,1,'#888'],[-2,8,2,2,'#bdbdbd'],[7,2,2,2,'#f2c9a0'],[7,1,2,1,'#ff2a6d']];
+  return `<svg class="zamboni" width="252" height="216" viewBox="-2 0 16 13.5" shape-rendering="crispEdges">${px.map(([x,y,w,h,c])=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`).join('')}</svg>`;
+}
+let ac=null;
+function horn(){if(!sound)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime;
+  for(const [f,st] of [[220,0],[277,0],[330,0]]){const o=ac.createOscillator(),g=ac.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.08,t+.05);g.gain.setValueAtTime(.08,t+1.4);g.gain.linearRampToValueAtTime(0,t+1.8);o.connect(g).connect(ac.destination);o.start(t+st);o.stop(t+1.9)}}catch{}}
+// ---------- events ----------
+$('snd').textContent=sound?'🔊':'🔇';
+$('snd').onclick=()=>{sound=!sound;ls.set('pp_snd',sound?'1':'0');$('snd').textContent=sound?'🔊':'🔇';if(sound)horn()};
 document.addEventListener('submit',async e=>{
   e.preventDefault();if(busy)return;const n=$('nick').value.trim().slice(0,16);if(!n)return;
   busy=true;view='pick';const id='p'+Math.random().toString(36).slice(2,10);save(id);
-  try{await post({t:'j',p:id,n})}catch{err='Couldn’t join, try again.';me=null}
-  busy=false;render();
+  try{await post({t:'j',p:id,n})}catch{err='Couldn’t join, try again.';me=null}busy=false;render();
 });
 document.addEventListener('click',async e=>{
-  const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.x==='claim'){choosing=true;render()}
-  else if(b.dataset.x==='back'){choosing=false;render()}
-  else if(b.dataset.x==='del'&&!busy){
-    if(!confirm('Remove '+P[me].name+' and all their picks?'))return;
-    busy=true;try{await post({t:'x',p:me});me=null;try{localStorage.removeItem('pp_me')}catch{};view=null;err=''}catch{err='Couldn’t remove, try again.'}
-    busy=false;render();
-  }
-  else if(b.dataset.x==='share'){shareBoard()}
-  else if(b.dataset.x==='team'){picking=!picking;render()}
-  else if(b.dataset.m&&!busy){const m=+b.dataset.m;busy=true;P[me].mascot=m;picking=false;render();
-    try{await post({t:'m',p:me,m});err=''}catch{err='Couldn’t change team, try again.';build()}busy=false;render()}
-  else if(b.dataset.x==='done'){view='table';render();scrollTo(0,0)}
-  else if(b.dataset.x==='edit'){view='pick';render();scrollTo(0,0)}
-  else if(b.dataset.x==='out'){me=null;try{localStorage.removeItem('pp_me')}catch{};render()}
+  const b=e.target.closest('button');if(!b||b.id==='snd')return;const x=b.dataset.x;
+  if(x==='claim'){choosing=true;render()}
+  else if(x==='back'){choosing=false;render()}
+  else if(x==='out'){me=null;ls.del('pp_me');render()}
   else if(b.dataset.claim){save(b.dataset.claim);choosing=false;view=null;render()}
-  else if(b.dataset.g&&!busy){
-    const g=G.find(x=>x.id===b.dataset.g),side=b.dataset.s;if(!g||locked(g))return;
-    busy=true;P[me].picks[g.id]=side;render();
-    try{await post({t:'p',p:me,g:g.id,s:side});err=''}catch{err='Pick didn’t save, tap again.';build()}
-    busy=false;render();
-  }
+  else if(x==='share')shareBoard();
+  else if(x==='team'){picking=!picking;render()}
+  else if(x==='done'){view='table';render();scrollTo(0,0)}
+  else if(x==='edit'){view='pick';render();scrollTo(0,0)}
+  else if(busy)return;
+  else if(x==='del'){if(!confirm('Remove '+P[me].name+' and all their picks?'))return;busy=true;
+    try{await post({t:'x',p:me});me=null;ls.del('pp_me');view=null;err=''}catch{err='Couldn’t remove, try again.'}busy=false;render()}
+  else if(b.dataset.m){const m=+b.dataset.m;busy=true;P[me].mascot=m;picking=false;render();
+    try{await post({t:'m',p:me,m});err=''}catch{err='Couldn’t change team, try again.';build()}busy=false;render()}
+  else if(b.dataset.lock){const g=GI[b.dataset.lock];if(!g||locked(g))return;const nx=P[me].lock===g.id?null:g.id;busy=true;P[me].lock=nx;render();
+    try{await post({t:'l',p:me,g:nx});err=''}catch{err='Lock didn’t save, tap again.';build()}busy=false;render()}
+  else if(b.dataset.g){const g=GI[b.dataset.g],side=b.dataset.s;if(!g||locked(g))return;busy=true;P[me].picks[g.id]=side;render();
+    try{await post({t:'p',p:me,g:g.id,s:side});err=''}catch{err='Pick didn’t save, tap again.';build()}busy=false;render()}
 });
-load();setInterval(()=>{if(!busy)load()},30000);
+load();
+setInterval(()=>{if(!busy&&!document.hidden)load()},15000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy)load()});
 }
 </script>

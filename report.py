@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scoring: each game's pot = number of people who picked it, split evenly among those who picked the winner.
+"""Scoring (Lock of the Night doubles that game's share): each game's pot = number of people who picked it, split evenly among those who picked the winner.
 Pool snapshot for the group-text update. Prints JSON.
 Usage: python3 report.py [--test picks.json scores.json]
 Reads picks.json and scores.json from the GitHub repo via `gh api` (synced every 5 min)."""
@@ -30,6 +30,11 @@ def players_from(events):
         elif m.get("t") == "m" and m["p"] in P and isinstance(m.get("m"), int) and 0 <= m["m"] < len(MASCOTS): P[m["p"]]["mascot"] = m["m"]
         elif m.get("t") == "j" and m.get("n") and m["p"] not in P:
             P[m["p"]] = {"name": str(m["n"])[:16], "picks": {}}
+        elif m.get("t") == "l" and m["p"] in P:
+            cur, nx = P[m["p"]].get("lock"), m.get("g")
+            if cur and START[cur] <= e["time"]: continue
+            if nx and (nx not in START or START[nx] <= e["time"]): continue
+            P[m["p"]]["lock"] = nx
         elif m.get("t") == "p" and m["p"] in P and m.get("g") in START and m.get("s") in ("A","H") and e["time"] < START[m["g"]]:
             P[m["p"]]["picks"][m["g"]] = m["s"]
     return P
@@ -92,7 +97,7 @@ def main():
         for gid, r in out.items():
             who = [pid for pid in ids if P[pid]["picks"].get(gid)]
             w = [pid for pid in who if P[pid]["picks"][gid] == r]
-            for pid in w: t[pid] += len(who)/len(w)
+            for pid in w: t[pid] += len(who)/len(w) * (2 if P[pid].get("lock") == gid else 1)
         return t
     decided = {g[0]: result(scores.get(g[0])) for g in G if result(scores.get(g[0]))}
     pts = tally(decided)
@@ -101,7 +106,7 @@ def main():
         if g[0] in decided: continue
         who = [pid for pid in ids if P[pid]["picks"].get(g[0])]
         for pid in who:
-            mx[pid] += len(who)/sum(1 for x in who if P[x]["picks"][g[0]] == P[pid]["picks"][g[0]])
+            mx[pid] += len(who)/sum(1 for x in who if P[x]["picks"][g[0]] == P[pid]["picks"][g[0]]) * (2 if P[pid].get("lock") == g[0] else 1)
     probs = [(g[0], result(scores.get(g[0])), p_home(scores.get(g[0]), odds.get(g[0]))) for g in G]
     N, win = 20000, {pid: 0.0 for pid in ids}
     if ids:
@@ -121,7 +126,9 @@ def main():
                       "winner": (g[2] if r == "H" else g[1]) if r else None, "home_win_chance": round(p_home(s, odds.get(g[0])),3), "moneyline": odds.get(g[0]),
                       "picked_" + g[1]: a, "picked_" + g[2]: h})
     stand = sorted(({"name": P[pid]["name"], "team": team(pid, P[pid]), "points": round(pts[pid],1), "max_possible": round(mx[pid],1), "win_chance": round(win[pid]/N,3) if ids else 0,
-                     "odds": american(win[pid]/N) if ids else None, "picks_made": len(P[pid]["picks"])} for pid in ids),
+                     "odds": american(win[pid]/N) if ids else None, "picks_made": len(P[pid]["picks"]),
+                     "lock": (lambda L: next((f"{x[1]} @ {x[2]} ({x[2] if P[pid]['picks'].get(L)=='H' else x[1]})" for x in G if x[0]==L), None) if L and START[L] <= datetime.datetime.now(datetime.timezone.utc).timestamp() else ("hidden" if L else None))(P[pid].get("lock")),
+                     "streak": (lambda h: len(h) - len(h.rstrip("W")))("".join("W" if P[pid]["picks"].get(g[0]) == decided[g[0]] else "L" for g in G if g[0] in decided and P[pid]["picks"].get(g[0])))} for pid in ids),
                    key=lambda x: (-x["win_chance"], -x["points"]))
     final = sum(1 for g in games if g["status"] == "final")
     fp = hashlib.sha1(json.dumps([[g["status"], g["score"]] for g in games] + [len(ids)]).encode()).hexdigest()[:12]

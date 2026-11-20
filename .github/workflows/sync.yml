@@ -22,10 +22,7 @@ jobs:
           mv merged.json picks.json && rm new.json
           echo "events: $(jq length picks.json)"
       - name: Fetch NHL scores
-        run: |
-          curl -fsSL https://api-web.nhle.com/v1/score/2026-11-21 \
-            | jq '[.games[] | {key: (.id|tostring), value: {state: .gameState, as: (.awayTeam.score // 0), hs: (.homeTeam.score // 0), period: (.periodDescriptor.number // 0), clock: (.clock.timeRemaining // "")}}] | from_entries' > scores.new \
-            && mv scores.new scores.json || echo "scores fetch failed"
+        run: python3 nhl.py || echo "scores fetch failed"
       - name: Fetch team logos (once)
         run: |
           mkdir -p logos
