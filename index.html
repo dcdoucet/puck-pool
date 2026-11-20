@@ -71,6 +71,12 @@ nav em{font-style:normal;font-size:12px;background:var(--line);color:var(--ink);
 .feed li{display:flex;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:15px}
 .feed li:last-child{border:0}
 .feed time{flex:none;color:var(--mute);font-size:13px}
+.banner{background:var(--accbg);border-radius:14px;padding:12px 14px;margin:2px 0 12px}
+.banner .cd{font-weight:750;font-size:18px;color:var(--acc)}
+.banner p{margin:4px 0 0;font-size:15px}
+.banner details{margin-top:4px;font-size:14px;color:var(--ink)}
+.banner summary{min-height:36px}
+.banner ul{margin:4px 0 4px;padding-left:18px}.banner li{margin:4px 0}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-150%);z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0)}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
@@ -103,6 +109,19 @@ const save=id=>{me=id;ls.set('pp_me',id)};
 const tm=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 const result=g=>PP.result(S,g),locked=g=>PP.started(S,g),mine=()=>me&&P[me];
 let joins=[];
+const FIRST=Math.min(...G.map(g=>g.t));
+function left(){const s=Math.max(0,Math.floor((FIRST-Date.now())/1000)),d=Math.floor(s/86400),hh=Math.floor(s%86400/3600),mm=Math.floor(s%3600/60),ss=s%60;
+  const H=Math.floor(s/3600);return H>=48?`${d}d ${hh}h`:H?`${H}h ${mm}m`:`${mm}:${String(ss).padStart(2,'0')}`}
+function banner(){if(Date.now()>=FIRST)return '';
+  return `<div class="banner"><div>First picks lock in <span class="cd" id="cd">${left()}</span></div>
+  <p>Pick a winner in each game. Each game's points are split by everyone who got it right.</p>
+  <details><summary>How scoring works</summary><ul>
+  <li>Each game is worth 1 point for every person who picked it.</li>
+  <li>Everyone who picked the winner splits those points. Picking against the crowd pays more.</li>
+  <li>🔒 doubles your share for one game. You can move it until that game starts.</li>
+  <li>Picks lock when each game starts, and nobody sees them until then.</li>
+  <li>Max is the most you can still finish with. Win % comes from sportsbook odds plus live scores.</li></ul></details></div>`}
+setInterval(()=>{const el=document.getElementById('cd');if(!el)return;if(Date.now()>=FIRST){render();return}el.textContent=left()},1000);
 function build(){
   P={};joins=[];for(const e of [...ev.values()].sort((a,b)=>a.time-b.time)){let m;try{m=JSON.parse(e.message)}catch{continue}
     if(!m||typeof m.p!=='string')continue;const t=e.time*1000;
@@ -158,7 +177,7 @@ function joinView(){
 function status(g){const s=S[g.id];if(PP.isFinal(s))return 'Final'+(s.period>4?' · SO':s.period>3?' · OT':'');if(PP.isLive(s))return `<b>Live</b> · ${PP.per(s.period)} ${esc(s.clock||'')}`;return locked(g)?'Locked':''}
 function pickView(m){
   const frozen=m.lock&&locked(GI[m.lock]);
-  $('main').innerHTML=`<p class="tip">Tap a team in each game. 🔒 doubles one pick.</p>`+G.map(g=>{
+  $('main').innerHTML=(banner()||`<p class="tip">Tap a team in each game. 🔒 doubles one pick.</p>`)+G.map(g=>{
     const k=m.picks[g.id],lk=locked(g),r=result(g),s=S[g.id],sc=s&&(PP.isLive(s)||PP.isFinal(s));
     const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';
       return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''} aria-pressed="${k===side}"><i style="background:${TC[ab]}"></i>${side==='H'?'@ ':''}${ab}${sc?` <small>${pts}</small>`:''}</button>`};
@@ -173,12 +192,12 @@ function homeView(m){
     .map(e=>e.kind==='drop'?(()=>{const lk=Object.keys(P).filter(id=>P[id].lock===e.gid&&P[id].picks[e.gid]);return lk.length?{...e,short:'🔒 '+lk.map(id=>P[id].name+' locked '+(P[id].picks[e.gid]==='H'?GI[e.gid].h:GI[e.gid].a)).join(', ')}:null})():e).filter(Boolean)
     .concat(joins.length?[{key:'joins',ts:joins[joins.length-1].ts,short:`👋 ${joins.length} in: ${joins.map(j=>j.name).join(', ')}`}]:[])
     .sort((a,b)=>b.ts-a.ts).slice(0,25);
-  $('main').innerHTML=`<img id="board" alt="Standings" ${boardURL?`src="${boardURL}"`:''}>
+  $('main').innerHTML=banner()+`<img id="board" alt="Standings" ${boardURL?`src="${boardURL}"`:''}>
     <button class="primary" style="width:100%" data-x="share">Share standings</button>
     <h3 class="fh">Latest</h3>
     ${E.length?`<ul class="feed">${E.map(e=>`<li><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></li>`).join('')}</ul>`:'<p class="mute">Results show up here as games finish.</p>'}
     <button class="add" data-x="add">+ Add player</button>
-    <details><summary>How scoring works</summary><p>Each game is worth 1 point for every person who picked it. Everyone who picked the winner splits those points. 🔒 doubles your share for one game. Max is the most you can still finish with. Win % comes from sportsbook odds plus live scores. Picks are hidden until each game starts.</p></details>`;
+    ${Date.now()<FIRST?'':`<details><summary>How scoring works</summary><p>Each game is worth 1 point for every person who picked it. Everyone who picked the winner splits those points. 🔒 doubles your share for one game. Max is the most you can still finish with. Win % comes from sportsbook odds plus live scores. Picks are hidden until each game starts.</p></details>`}`;
   drawBoard();
 }
 function renderSheet(){
