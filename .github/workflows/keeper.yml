@@ -1,0 +1,24 @@
+name: keeper
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        default: "335"
+  schedule:
+    - cron: "17 */3 20-22 11 *"
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 keeper.py
+        env:
+          BUDGET_MIN: ${{ inputs.minutes }}
+          GH_TOKEN: ${{ github.token }}
