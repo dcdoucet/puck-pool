@@ -1,0 +1,9 @@
+name: probe
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "== CORS"; curl -sSI -H "Origin: https://dcdoucet.github.io" https://api-web.nhle.com/v1/score/now | grep -i -E "access-control|cache-control|HTTP/"
+          echo "== GOALS"; curl -fsSL https://api-web.nhle.com/v1/score/2026-11-19 | jq -c '[.games[] | select(.goals) ][0] | {state: .gameState, clock, period: .periodDescriptor, goals: (.goals[:2])}' | head -c 1800; echo
