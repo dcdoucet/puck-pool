@@ -43,38 +43,43 @@ tr.me td{font-weight:700}
 const G=[["2026020359","EDM","CAR","2026-11-21T18:00:00Z"],["2026020360","CHI","CGY","2026-11-21T20:30:00Z"],["2026020361","BUF","FLA","2026-11-21T23:00:00Z"],["2026020362","PIT","NSH","2026-11-21T23:00:00Z"],["2026020363","WSH","BOS","2026-11-22T00:00:00Z"],["2026020364","CBJ","TOR","2026-11-22T00:00:00Z"],["2026020365","PHI","MTL","2026-11-22T00:00:00Z"],["2026020366","LAK","OTT","2026-11-22T00:00:00Z"],["2026020367","NYI","DET","2026-11-22T00:00:00Z"],["2026020368","NJD","STL","2026-11-22T00:00:00Z"],["2026020369","VGK","WPG","2026-11-22T00:00:00Z"],["2026020370","ANA","UTA","2026-11-22T02:00:00Z"],["2026020371","MIN","VAN","2026-11-22T03:00:00Z"],["2026020372","SEA","SJS","2026-11-22T03:00:00Z"]].map(([id,a,h,t])=>({id,a,h,t:Date.parse(t)}));
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let BLOB=null,data={players:{}},scores={},me=null,busy=false,choosing=false,err='';
+const TOPIC='puckpool-614c7aa1d6ed',NT='https://ntfy.sh/'+TOPIC;
+let ev=new Map(),P={},scores={},me=null,busy=false,choosing=false,err='',loaded=false;
 try{me=localStorage.getItem('pp_me')}catch{}
 const save=id=>{me=id;try{localStorage.setItem('pp_me',id)}catch{}};
-const api=()=>'https://jsonblob.com/api/jsonBlob/'+BLOB;
 const locked=g=>Date.now()>=g.t||(scores[g.id]&&!['FUT','PRE'].includes(scores[g.id].state));
 const result=g=>{const s=scores[g.id];if(!s||!['FINAL','OFF'].includes(s.state))return null;return s.hs>s.as?'H':'A'};
+function build(){
+  // replay events in server-time order; a pick only counts if ntfy stamped it before puck drop
+  P={};const list=[...ev.values()].sort((a,b)=>a.time-b.time);
+  for(const e of list){let m;try{m=JSON.parse(e.message)}catch{continue}
+    if(!m||typeof m.p!=='string')continue;
+    if(m.t==='j'&&m.n&&!P[m.p])P[m.p]={name:String(m.n).slice(0,16),picks:{}};
+    else if(m.t==='p'&&P[m.p]){const g=G.find(x=>x.id===m.g);if(g&&(m.s==='A'||m.s==='H')&&e.time*1000<g.t)P[m.p].picks[g.id]=m.s}}
+}
+const add=e=>{if(e&&e.id&&e.message)ev.set(e.id,e)};
 async function load(){
   try{
-    if(!BLOB){const c=await (await fetch('config.json?t='+Date.now())).json();BLOB=c.blob}
-    const [d,s]=await Promise.all([fetch(api(),{cache:'no-store'}).then(r=>r.json()),fetch('scores.json?t='+Date.now()).then(r=>r.json()).catch(()=>({}))]);
-    data=d&&d.players?d:{players:{}};scores=s||{};err='';
-  }catch(e){err="Can't load right now. Pull to refresh."}
-  render();
+    const t=Date.now();
+    const [arc,live,s]=await Promise.all([
+      fetch('picks.json?t='+t).then(r=>r.ok?r.json():[]).catch(()=>[]),
+      fetch(NT+'/json?poll=1&since=all').then(r=>r.text()),
+      fetch('scores.json?t='+t).then(r=>r.json()).catch(()=>({}))]);
+    (arc||[]).forEach(add);
+    live.split('\n').forEach(l=>{if(!l)return;try{const e=JSON.parse(l);if(e.event==='message')add(e)}catch{}});
+    scores=s||{};err='';loaded=true;
+  }catch(e){err="Can't load right now. Try again in a minute."}
+  build();render();
 }
-async function write(mutate){
-  // read-merge-write, then verify; retry if someone else's save clobbered ours
-  for(let i=0;i<4;i++){
-    const cur=await fetch(api(),{cache:'no-store'}).then(r=>r.json());
-    if(!cur.players)cur.players={};
-    mutate(cur);
-    await fetch(api(),{method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(cur)});
-    const chk=await fetch(api(),{cache:'no-store'}).then(r=>r.json());
-    const want=JSON.stringify(cur.players[me]),got=JSON.stringify(chk.players?.[me]);
-    data=chk;if(want===got)return true;
-    await new Promise(r=>setTimeout(r,300+Math.random()*700));
-  }
-  return false;
+async function post(msg){
+  const r=await fetch(NT,{method:'POST',body:JSON.stringify(msg)});
+  if(!r.ok)throw new Error(r.status);
+  add(await r.json());build();
 }
 function render(){
-  const P=data.players,mine=me&&P[me];
+  const mine=me&&P[me];
   let h=err?`<div class="msg">${esc(err)}</div>`:'';
-  if(!BLOB&&!err)h+='<div class="msg">Loading…</div>';
+  if(!loaded&&!err)h+='<div class="msg">Loading…</div>';
   else if(!mine){
     const names=Object.entries(P);
     h+=choosing?`<div class="names"><p class="mute">Tap your name:</p>${names.map(([id,p])=>`<button data-claim="${esc(id)}">${esc(p.name)}</button>`).join('')}<p><button class="link" data-x="back">Back</button></p></div>`
@@ -99,7 +104,7 @@ function render(){
 document.addEventListener('submit',async e=>{
   e.preventDefault();if(busy)return;const n=$('nick').value.trim().slice(0,16);if(!n)return;
   busy=true;const id='p'+Math.random().toString(36).slice(2,10);save(id);
-  try{if(!await write(d=>{d.players[id]={name:n,picks:{}}}))err='Save failed, try again.'}catch{err='Save failed, try again.'}
+  try{await post({t:'j',p:id,n})}catch{err='Couldn’t join, try again.';me=null}
   busy=false;render();
 });
 document.addEventListener('click',async e=>{
@@ -110,8 +115,8 @@ document.addEventListener('click',async e=>{
   else if(b.dataset.claim){save(b.dataset.claim);choosing=false;render()}
   else if(b.dataset.g&&!busy){
     const g=G.find(x=>x.id===b.dataset.g),side=b.dataset.s;if(!g||locked(g))return;
-    busy=true;data.players[me].picks={...data.players[me].picks,[g.id]:side};render();
-    try{if(!await write(d=>{if(d.players[me]){d.players[me].picks={...(d.players[me].picks||{}),[g.id]:side}}}))err='Pick didn’t save, tap again.'}catch{err='Pick didn’t save, tap again.'}
+    busy=true;P[me].picks[g.id]=side;render();
+    try{await post({t:'p',p:me,g:g.id,s:side});err=''}catch{err='Pick didn’t save, tap again.';build()}
     busy=false;render();
   }
 });

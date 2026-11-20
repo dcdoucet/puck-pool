@@ -1,0 +1,34 @@
+name: sync
+on:
+  schedule:
+    - cron: "*/5 * 20-22 11 *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: sync
+env:
+  TOPIC: puckpool-614c7aa1d6ed
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive picks
+        run: |
+          [ -f picks.json ] || echo '[]' > picks.json
+          curl -fsS "https://ntfy.sh/$TOPIC/json?poll=1&since=all" \
+            | jq -s '[.[] | select(.event=="message") | {id, time, message}]' > new.json
+          jq -s '(.[0] + .[1]) | unique_by(.id) | sort_by(.time)' picks.json new.json > merged.json
+          mv merged.json picks.json && rm new.json
+          echo "events: $(jq length picks.json)"
+      - name: Fetch NHL scores
+        run: |
+          curl -fsSL https://api-web.nhle.com/v1/score/2026-11-21 \
+            | jq '[.games[] | {key: (.id|tostring), value: {state: .gameState, as: (.awayTeam.score // 0), hs: (.homeTeam.score // 0)}}] | from_entries' > scores.new \
+            && mv scores.new scores.json || echo "scores fetch failed"
+      - name: Commit if changed
+        run: |
+          git config user.name "sync-bot"
+          git config user.email "sync-bot@users.noreply.github.com"
+          git add picks.json scores.json
+          git diff --cached --quiet || (git commit -m "Sync picks and scores" && git push)
