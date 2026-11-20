@@ -9,6 +9,13 @@ REPO = "dcdoucet/puck-pool"
 G = [("2026020359","EDM","CAR","2026-11-21T18:00:00Z"),("2026020360","CHI","CGY","2026-11-21T20:30:00Z"),("2026020361","BUF","FLA","2026-11-21T23:00:00Z"),("2026020362","PIT","NSH","2026-11-21T23:00:00Z"),("2026020363","WSH","BOS","2026-11-22T00:00:00Z"),("2026020364","CBJ","TOR","2026-11-22T00:00:00Z"),("2026020365","PHI","MTL","2026-11-22T00:00:00Z"),("2026020366","LAK","OTT","2026-11-22T00:00:00Z"),("2026020367","NYI","DET","2026-11-22T00:00:00Z"),("2026020368","NJD","STL","2026-11-22T00:00:00Z"),("2026020369","VGK","WPG","2026-11-22T00:00:00Z"),("2026020370","ANA","UTA","2026-11-22T02:00:00Z"),("2026020371","MIN","VAN","2026-11-22T03:00:00Z"),("2026020372","SEA","SJS","2026-11-22T03:00:00Z")]
 START = {g[0]: datetime.datetime.fromisoformat(g[3].replace("Z","+00:00")).timestamp() for g in G}
 
+MASCOTS = ['Raccoons','Flowers','Moose','Beavers','Geese','Lumberjacks','Owls','Bees','Donuts','Pickles','Yetis','Turtles']
+def team(pid, p):
+    x = 0
+    for ch in pid: x = (x*31 + ord(ch)) & 0xFFFFFFFF
+    m = p.get("mascot", x % len(MASCOTS))
+    return p["name"] + ("'" if p["name"].lower().endswith("s") else "'s") + " " + MASCOTS[m]
+
 def gh(path):
     out = subprocess.run(["gh","api",f"repos/{REPO}/contents/{path}","-q",".content"],capture_output=True,text=True,check=True).stdout
     return json.loads(base64.b64decode(out))
@@ -20,6 +27,7 @@ def players_from(events):
         except Exception: continue
         if not isinstance(m, dict) or not isinstance(m.get("p"), str): continue
         if m.get("t") == "x": P.pop(m["p"], None)
+        elif m.get("t") == "m" and m["p"] in P and isinstance(m.get("m"), int) and 0 <= m["m"] < len(MASCOTS): P[m["p"]]["mascot"] = m["m"]
         elif m.get("t") == "j" and m.get("n") and m["p"] not in P:
             P[m["p"]] = {"name": str(m["n"])[:16], "picks": {}}
         elif m.get("t") == "p" and m["p"] in P and m.get("g") in START and m.get("s") in ("A","H") and e["time"] < START[m["g"]]:
@@ -96,7 +104,7 @@ def main():
                       "period": s.get("period") if st == "live" else None, "clock": s.get("clock") if st == "live" else None,
                       "winner": (g[2] if r == "H" else g[1]) if r else None, "home_win_chance": round(p_home(s),3),
                       "picked_" + g[1]: a, "picked_" + g[2]: h})
-    stand = sorted(({"name": P[pid]["name"], "points": round(pts[pid],1), "max_possible": round(mx[pid],1), "win_chance": round(win[pid]/N,3) if ids else 0,
+    stand = sorted(({"name": P[pid]["name"], "team": team(pid, P[pid]), "points": round(pts[pid],1), "max_possible": round(mx[pid],1), "win_chance": round(win[pid]/N,3) if ids else 0,
                      "odds": american(win[pid]/N) if ids else None, "picks_made": len(P[pid]["picks"])} for pid in ids),
                    key=lambda x: (-x["win_chance"], -x["points"]))
     final = sum(1 for g in games if g["status"] == "final")

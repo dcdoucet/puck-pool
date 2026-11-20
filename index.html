@@ -31,6 +31,11 @@ tr.me td{font-weight:700}
 .names button{display:block;width:100%;margin-top:6px;background:var(--onbg);color:var(--ink)}
 .lg{width:34px;height:34px;flex:none}
 .nm{display:flex;align-items:center;gap:10px}
+.cr{flex:none}
+@media(prefers-color-scheme:dark){.cr{filter:drop-shadow(0 0 1.2px rgba(255,255,255,.55))}}
+.crests{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:12px}
+.crests button{background:var(--bg);color:var(--ink);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:6px 2px;font-size:12px;font-weight:500;gap:2px}
+.crests button.on{border-color:var(--on)}
 .done{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));width:100%;margin-top:8px;font-size:19px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .edit{width:100%;margin:6px 0 4px}
 </style></head><body><main>
@@ -39,13 +44,14 @@ tr.me td{font-weight:700}
 <div id="me"></div>
 <div id="view"></div>
 </main>
+<script src="crest.js"></script>
 <script>
 {
 const G=[["2026020359","EDM","CAR","2026-11-21T18:00:00Z"],["2026020360","CHI","CGY","2026-11-21T20:30:00Z"],["2026020361","BUF","FLA","2026-11-21T23:00:00Z"],["2026020362","PIT","NSH","2026-11-21T23:00:00Z"],["2026020363","WSH","BOS","2026-11-22T00:00:00Z"],["2026020364","CBJ","TOR","2026-11-22T00:00:00Z"],["2026020365","PHI","MTL","2026-11-22T00:00:00Z"],["2026020366","LAK","OTT","2026-11-22T00:00:00Z"],["2026020367","NYI","DET","2026-11-22T00:00:00Z"],["2026020368","NJD","STL","2026-11-22T00:00:00Z"],["2026020369","VGK","WPG","2026-11-22T00:00:00Z"],["2026020370","ANA","UTA","2026-11-22T02:00:00Z"],["2026020371","MIN","VAN","2026-11-22T03:00:00Z"],["2026020372","SEA","SJS","2026-11-22T03:00:00Z"]].map(([id,a,h,t])=>({id,a,h,t:Date.parse(t)}));
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const TOPIC='puckpool-614c7aa1d6ed',NT='https://ntfy.sh/'+TOPIC;
-let view=null,ev=new Map(),P={},scores={},me=null,busy=false,choosing=false,err='',loaded=false;
+let picking=false,view=null,ev=new Map(),P={},scores={},me=null,busy=false,choosing=false,err='',loaded=false;
 try{me=localStorage.getItem('pp_me')}catch{}
 const save=id=>{me=id;try{localStorage.setItem('pp_me',id)}catch{}};
 const locked=g=>Date.now()>=g.t||(scores[g.id]&&!['FUT','PRE'].includes(scores[g.id].state));
@@ -56,6 +62,7 @@ function build(){
   for(const e of list){let m;try{m=JSON.parse(e.message)}catch{continue}
     if(!m||typeof m.p!=='string')continue;
     if(m.t==='x')delete P[m.p];
+    else if(m.t==='m'&&P[m.p]&&Number.isInteger(m.m)&&m.m>=0&&m.m<MASCOTS.length)P[m.p].mascot=m.m;
     else if(m.t==='j'&&m.n&&!P[m.p])P[m.p]={name:String(m.n).slice(0,16),picks:{}};
     else if(m.t==='p'&&P[m.p]){const g=G.find(x=>x.id===m.g);if(g&&(m.s==='A'||m.s==='H')&&e.time*1000<g.t)P[m.p].picks[g.id]=m.s}}
 }
@@ -102,7 +109,11 @@ function render(){
     const names=Object.entries(P);
     h+=choosing?`<div class="names"><p class="mute">Tap your name:</p>${names.map(([id,p])=>`<button data-claim="${esc(id)}">${esc(p.name)}</button>`).join('')}<p><button class="link" data-x="back">Back</button></p></div>`
     :`<form id="join"><input id="nick" maxlength="16" placeholder="Your name" autocomplete="off" required><button>Join</button></form>${names.length?'<p><button class="link" data-x="claim">Already joined on another phone?</button></p>':''}`;
-  }else h+=`<p><span>Picking as <b>${esc(mine.name)}</b> · <button class="link" data-x="out">Not you?</button> · <button class="link" data-x="del">Remove me</button></span></p>`;
+  }else{
+    const T=teamOf(me,mine);
+    h+=`<div class="nm" style="margin:12px 0">${crest(T.m,T.kit,48)}<div><b>${esc(teamName(mine.name,T.m))}</b><div class="mute"><button class="link" data-x="team">Change team</button> · <button class="link" data-x="out">Not you?</button> · <button class="link" data-x="del">Remove me</button></div></div></div>`;
+    if(picking)h+=`<div class="crests">${MASCOTS.map((n,i)=>`<button data-m="${i}" class="${i===T.m?'on':''}">${crest(i,T.kit,52)}<span>${n}</span></button>`).join('')}</div>`;
+  }
   $('me').innerHTML=h;
   if(mine&&view==='pick'){
     $('view').innerHTML=G.map(g=>{
@@ -114,7 +125,7 @@ function render(){
   const T=tally(),ids=Object.keys(P),lead=Math.max(0,...ids.map(id=>T[id].pts));
   const rows=ids.map(id=>({id,p:P[id],...T[id]})).sort((a,b)=>b.pts-a.pts||b.max-a.max||a.p.name.localeCompare(b.p.name));
   $('view').innerHTML=(mine?'<button class="edit" data-x="edit">Edit picks</button>':'')+
-    `<table><thead><tr><th>Player</th><th>Pts</th><th>Max</th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr class="${r.id===me?'me':''} ${r.max<lead?'out':''}"><td><span class="nm">${esc(r.p.name)}${r.max<lead?' · out':''}</span></td><td>${fmt(r.pts)}</td><td>${fmt(r.max)}</td></tr>`).join(''):'<tr><td colspan="3" class="mute">No one yet.</td></tr>'}</tbody></table>
+    `<table><thead><tr><th>Player</th><th>Pts</th><th>Max</th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr class="${r.id===me?'me':''} ${r.max<lead?'out':''}"><td><span class="nm">${(T2=>crest(T2.m,T2.kit,36))(teamOf(r.id,r.p))}<span>${esc(teamName(r.p.name,teamOf(r.id,r.p).m))}${r.max<lead?' · out':''}</span></span></td><td>${fmt(r.pts)}</td><td>${fmt(r.max)}</td></tr>`).join(''):'<tr><td colspan="3" class="mute">No one yet.</td></tr>'}</tbody></table>
     <p class="mute">Each game is worth one point per person who picked it, split among everyone who got it right. Max is the most you can still finish with. Picks lock when each game starts.</p>`;
 }
 document.addEventListener('submit',async e=>{
@@ -132,6 +143,9 @@ document.addEventListener('click',async e=>{
     busy=true;try{await post({t:'x',p:me});me=null;try{localStorage.removeItem('pp_me')}catch{};view=null;err=''}catch{err='Couldn’t remove, try again.'}
     busy=false;render();
   }
+  else if(b.dataset.x==='team'){picking=!picking;render()}
+  else if(b.dataset.m&&!busy){const m=+b.dataset.m;busy=true;P[me].mascot=m;picking=false;render();
+    try{await post({t:'m',p:me,m});err=''}catch{err='Couldn’t change team, try again.';build()}busy=false;render()}
   else if(b.dataset.x==='done'){view='table';render();scrollTo(0,0)}
   else if(b.dataset.x==='edit'){view='pick';render();scrollTo(0,0)}
   else if(b.dataset.x==='out'){me=null;try{localStorage.removeItem('pp_me')}catch{};render()}
