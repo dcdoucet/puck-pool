@@ -109,6 +109,15 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 .ps.miss img{opacity:.22}
 .ps.hit::after{content:"";position:absolute;right:0;bottom:-2px;width:7px;height:7px;border-radius:50%;background:var(--good);border:1.5px solid var(--card)}
 .ps.none::before{content:"";width:8px;height:2px;background:var(--line);align-self:center}
+.sl .lh,.sl .p{display:grid;grid-template-columns:16px 22px 64px minmax(0,1fr) 30px 36px 38px;gap:6px;align-items:center;padding:0 10px}
+.sl .lh{font-size:12px;color:var(--mute);font-weight:600;min-height:32px}.sl .lh span{text-align:right}.sl .lh .pkh{grid-column:4;text-align:left}
+.sl .lh span:first-child{grid-column:1/4}
+.sl .p{min-height:54px;padding-bottom:0}
+.sl .n{font-weight:650;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sl .v{font-size:15px}
+.sx{display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding:4px 0}
+.sx::-webkit-scrollbar{display:none}
+.sx .ps{flex:none;width:24px;height:18px}.sx .ps img{height:18px}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-300%);opacity:0;visibility:hidden;z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s,opacity .25s,visibility .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
@@ -193,7 +202,7 @@ function render(){
   $('hdr').innerHTML=m?`<button class="me" data-x="menu" aria-label="Menu">${crest(teamOf(me,m).m,teamOf(me,m).kit,32)}</button>`:'';
   if(!loaded){$('main').innerHTML=`<p class="mute">${err||'Loading…'}</p>`;return}
   if(!m){tab==='home'?homeView(null):joinView();renderSheet();return}
-  tab==='pick'?pickView(m):homeView(m);
+  tab==='pick'?pickView(m):homeView(m);syncStrips();
   renderSheet();
 }
 function joinView(){
@@ -237,12 +246,11 @@ function homeView(m){
   const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).sort((a,b)=>b.ts-a.ts).slice(0,3);
   $('main').innerHTML=`<div class="hero">${hero}</div>
     <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
-    <div class="list"><div class="lh"><span></span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
+    <div class="list sl"><div class="lh"><span></span><span class="pkh">Picks →</span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
       const strip=G.map(g=>{const k=p.picks[g.id],rs=result(g);if(!k)return '<span class="ps none"></span>';
         return `<span class="ps ${rs?(rs===k?'hit':'miss'):''}">${lg(k==='H'?g.h:g.a,'')}</span>`}).join('');
-      return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}"><span class="rk">${i+1}</span>${crest(t.m,t.kit,32)}
-        <span class="n"><b>${esc(p.name)}</b><small>${MASCOTS[t.m]}${r.b.length?' · '+r.b.map(k=>ICON[k]).join(''):''}</small></span>
-        <span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span><span class="strip">${strip}</span></div>`}).join('')}</div>
+      return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}"><span class="rk">${i+1}</span>${crest(t.m,t.kit,22)}<span class="n">${esc(p.name)}</span>
+        <div class="sx">${strip}</div><span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span></div>`}).join('')}</div>
     ${E.length?`<div class="sec"><h2>Latest</h2></div><div class="list">${E.map(e=>`<div class="f"><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></div>`).join('')}</div>`:''}`;
 }
 function playerSheet(id){
@@ -252,6 +260,8 @@ function playerSheet(id){
     const pick=!k?'<span class="dim">—</span>':!show?'<span class="dim">Hidden</span>':`<span class="${r?(r===k?'okc':'noc'):''}">${k==='H'?g.h:g.a}${r?(r===k?' ✓':' ✗'):PP.isLive(s)?' · live':''}</span>`;
     return `<div><span>${g.a} @ ${g.h}</span>${pick}</div>`}).join('')}</div>`;
 }
+let SX=null;
+function syncStrips(){const ss=[...document.querySelectorAll('.sx')];if(SX===null){const i=G.findIndex(g=>!result(g));SX=Math.max(0,i-1)*27}ss.forEach(s=>{s.scrollLeft=SX;s.onscroll=()=>{if(s._l)return;SX=s.scrollLeft;ss.forEach(o=>{if(o!==s){o._l=1;o.scrollLeft=SX;requestAnimationFrame(()=>o._l=0)}})}})}
 function renderSheet(){
   const m=mine(),el=$('sheet');if(!sheet||!m){el.innerHTML='';return}
   const t=teamOf(me,m);
