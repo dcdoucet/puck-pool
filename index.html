@@ -124,6 +124,7 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 .sx{display:flex;gap:3px;overflow:hidden;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding:4px 0}
 .sx::-webkit-scrollbar{display:none}
 .sx .ps{flex:none;width:24px;height:18px}.sx .ps img{height:18px}
+.f.nw{display:block}.f.nw b{display:block;font-size:16px;line-height:1.3;margin:2px 0 4px}.f.nw p{margin:0;color:var(--mute);font-size:15px;line-height:1.45}.nk{font-size:12px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-300%);opacity:0;visibility:hidden;z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s,opacity .25s,visibility .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
@@ -150,7 +151,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const TOPIC='puckpool-614c7aa1d6ed',LIVE=TOPIC+'-live',NT='https://ntfy.sh/'+TOPIC;
 const ls={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}},del:k=>{try{localStorage.removeItem(k)}catch{}}};
 const TC={EDM:'#ff4c00',CAR:'#ce1126',CHI:'#cf0a2c',CGY:'#c8102e',BUF:'#0057b8',FLA:'#c8102e',PIT:'#fcb514',NSH:'#ffb81c',WSH:'#c8102e',BOS:'#ffb81c',CBJ:'#2a5fae',TOR:'#2f6fd8',PHI:'#f74902',MTL:'#af1e2d',LAK:'#a2aaad',OTT:'#c52032',NYI:'#f47d30',DET:'#ce1126',NJD:'#ce1126',STL:'#2f6fd8',VGK:'#b4975a',WPG:'#55a0e0',ANA:'#f47a38',UTA:'#6cace4',MIN:'#2e8b57',VAN:'#00843d',SEA:'#99d9d9',SJS:'#00a3ad'};
-let ev=new Map(),P={},base={},liveS={},S={},O={},seenAt={},me=ls.get('pp_me'),tab=null,busy=false,loaded=false,lastFull=0,open=null,sheet=null,err='';
+let NEWS=[],ev=new Map(),P={},base={},liveS={},S={},O={},seenAt={},me=ls.get('pp_me'),tab=null,busy=false,loaded=false,lastFull=0,open=null,sheet=null,err='';
 const save=id=>{me=id;ls.set('pp_me',id);ls.set('pp_prev',id)};
 const DARK=matchMedia('(prefers-color-scheme: dark)').matches;
 const lg=(ab,cls)=>`<img class="${cls}" src="logos/${ab}_${DARK?'dark':'light'}.svg" alt="${ab}">`;
@@ -185,12 +186,13 @@ const add=e=>{if(e&&e.id&&e.message)ev.set(e.id,e)};
 async function load(){
   try{
     const t=Date.now(),full=t-lastFull>55000||!loaded;
-    const [nt,arc,s,o]=await Promise.all([
+    const [nt,arc,s,o,nw]=await Promise.all([
       fetch(`https://ntfy.sh/${TOPIC},${LIVE}/json?poll=1&since=all`).then(r=>r.text()),
       full?fetch('picks.json?t='+t).then(r=>r.ok?r.json():[]).catch(()=>[]):null,
       full?fetch('scores.json?t='+t).then(r=>r.json()).catch(()=>null):null,
-      full?fetch('odds.json?t='+t).then(r=>r.json()).catch(()=>null):null]);
-    if(full){(arc||[]).forEach(add);if(s)base=s;if(o)O=o;lastFull=t}
+      full?fetch('odds.json?t='+t).then(r=>r.json()).catch(()=>null):null,
+      full?fetch('news.json?t='+t).then(r=>r.json()).catch(()=>null):null]);
+    if(full){(arc||[]).forEach(add);if(s)base=s;if(o)O=o;if(Array.isArray(nw))NEWS=nw;lastFull=t}
     for(const l of nt.split('\n')){if(!l)continue;let e;try{e=JSON.parse(l)}catch{continue}if(e.event!=='message')continue;
       if(e.topic===LIVE){try{const m=JSON.parse(e.message),tt=e.time*1000;for(const id in m.g||{}){const x=m.g[id];
         if(PP.isFinal(x)&&(!seenAt['f:'+id]||tt<seenAt['f:'+id]))seenAt['f:'+id]=tt;
@@ -255,7 +257,7 @@ function homeView(m){
   const byK={};for(const id in A)for(const k of A[id])(byK[k]=byK[k]||[]).push(id);
   const AE=Object.entries(byK).map(([k,ids])=>{const key=k+':'+ids.sort().join(',');if(!seenAw[key])seenAw[key]=Date.now();const ns=ids.map(id=>P[id].name);return {key,ts:seenAw[key],short:AWT[k](ns.length>1?ns.slice(0,-1).join(', ')+' & '+ns.at(-1):ns[0])}});
   ls.set('pp_aw',JSON.stringify(seenAw));
-  const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).concat(AE).sort((a,b)=>b.ts-a.ts).slice(0,5);
+  const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).concat(AE).concat(NEWS.map(n=>({key:n.id,ts:n.ts,news:n}))).sort((a,b)=>b.ts-a.ts).slice(0,5);
   $('main').innerHTML=`<div class="hero">${hero}</div>
     <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
     <div class="list sl"><div class="lh"><span></span><span class="pkh">Picks →</span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
@@ -263,7 +265,7 @@ function homeView(m){
         return `<span class="ps ${rs?(rs===k?'hit':'miss'):''}">${lg(k==='H'?g.h:g.a,'')}</span>`}).join('');
       return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}" data-pl="${esc(r.id)}" role="button" tabindex="0" aria-label="${esc(p.name)}'s picks"><span class="rk">${i+1}</span>${crest(t.m,t.kit,22)}<span class="n">${esc(p.name)}</span>
         <div class="sx">${strip}</div><span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span></div>`}).join('')}</div>
-    ${E.length?`<div class="sec"><h2>Latest</h2></div><div class="list">${E.map(e=>`<div class="f"><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></div>`).join('')}</div>`:''}`;
+    ${E.length?`<div class="sec"><h2>Latest</h2></div><div class="list">${E.map(e=>e.news?`<div class="f nw"><div><div class="nk">Puck Pool Report · ${tm(e.ts)}</div><b>${esc(e.news.h)}</b><p>${esc(e.news.b)}</p></div></div>`:`<div class="f"><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></div>`).join('')}</div>`:''}`;
 }
 function playerSheet(id){
   const p=P[id];if(!p)return '';const t=teamOf(id,p),T=PP.tally(P,S)[id],self=id===me;
