@@ -26,9 +26,29 @@ jobs:
           curl -fsSL https://api-web.nhle.com/v1/score/2026-11-21 \
             | jq '[.games[] | {key: (.id|tostring), value: {state: .gameState, as: (.awayTeam.score // 0), hs: (.homeTeam.score // 0), period: (.periodDescriptor.number // 0), clock: (.clock.timeRemaining // "")}}] | from_entries' > scores.new \
             && mv scores.new scores.json || echo "scores fetch failed"
+      - name: Fetch team logos (once)
+        run: |
+          mkdir -p logos
+          for T in EDM CAR CHI CGY BUF FLA PIT NSH WSH BOS CBJ TOR PHI MTL LAK OTT NYI DET NJD STL VGK WPG ANA UTA MIN VAN SEA SJS; do
+            for V in light dark; do
+              [ -s logos/${T}_${V}.svg ] || curl -fsSL "https://assets.nhle.com/logos/nhl/svg/${T}_${V}.svg" -o logos/${T}_${V}.svg || rm -f logos/${T}_${V}.svg
+            done
+          done
+          ls logos | wc -l
+      - name: Fetch pregame odds
+        run: |
+          [ -f odds.json ] || echo '{}' > odds.json
+          curl -fsSL https://api-web.nhle.com/v1/schedule/2026-11-21 -o sched.json || exit 0
+          jq '.oddsPartners // [] | map({partnerId, name, country})' sched.json | head -40
+          jq '[.gameWeek[] | select(.date=="2026-11-21") | .games[] | select(.gameState=="FUT" or .gameState=="PRE")
+               | {key: (.id|tostring), value: {a: [.awayTeam.odds[]?], h: [.homeTeam.odds[]?]}}
+               | select((.value.a|length) > 0)] | from_entries' sched.json > fresh.json
+          jq -s '.[0] * .[1]' odds.json fresh.json > merged.json && mv merged.json odds.json
+          rm -f sched.json fresh.json
+          jq -c 'to_entries[:2]' odds.json
       - name: Commit if changed
         run: |
           git config user.name "sync-bot"
           git config user.email "sync-bot@users.noreply.github.com"
-          git add picks.json scores.json
+          git add picks.json scores.json odds.json logos
           git diff --cached --quiet || (git commit -m "Sync picks and scores" && git push)
