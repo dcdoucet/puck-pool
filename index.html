@@ -100,6 +100,15 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 .rules{padding-left:18px;margin:10px 0 4px;font-size:15px}.rules li{margin:6px 0}
 .done{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));width:100%;margin-top:8px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}.chips button{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:999px;padding:6px 14px 6px 8px;min-height:44px;font-weight:600}
+.tl{width:48px;height:32px;object-fit:contain}
+.t .tt small{font-size:18px;color:var(--ink);margin-left:2px}
+.list .p{padding-bottom:10px}
+.strip{grid-column:1/-1;display:grid;grid-template-columns:repeat(14,1fr);gap:2px;margin-top:-2px}
+.ps{position:relative;height:16px;display:flex;justify-content:center}
+.ps img{height:16px;width:100%;object-fit:contain}
+.ps.miss img{opacity:.22}
+.ps.hit::after{content:"";position:absolute;right:0;bottom:-2px;width:7px;height:7px;border-radius:50%;background:var(--good);border:1.5px solid var(--card)}
+.ps.none::before{content:"";width:8px;height:2px;background:var(--line);align-self:center}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-300%);opacity:0;visibility:hidden;z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s,opacity .25s,visibility .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
@@ -128,6 +137,8 @@ const ls={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,
 const TC={EDM:'#ff4c00',CAR:'#ce1126',CHI:'#cf0a2c',CGY:'#c8102e',BUF:'#0057b8',FLA:'#c8102e',PIT:'#fcb514',NSH:'#ffb81c',WSH:'#c8102e',BOS:'#ffb81c',CBJ:'#2a5fae',TOR:'#2f6fd8',PHI:'#f74902',MTL:'#af1e2d',LAK:'#a2aaad',OTT:'#c52032',NYI:'#f47d30',DET:'#ce1126',NJD:'#ce1126',STL:'#2f6fd8',VGK:'#b4975a',WPG:'#55a0e0',ANA:'#f47a38',UTA:'#6cace4',MIN:'#2e8b57',VAN:'#00843d',SEA:'#99d9d9',SJS:'#00a3ad'};
 let ev=new Map(),P={},base={},liveS={},S={},O={},seenAt={},me=ls.get('pp_me'),tab=null,busy=false,loaded=false,lastFull=0,open=null,sheet=null,err='';
 const save=id=>{me=id;ls.set('pp_me',id);ls.set('pp_prev',id)};
+const DARK=matchMedia('(prefers-color-scheme: dark)').matches;
+const lg=(ab,cls)=>`<img class="${cls}" src="logos/${ab}_${DARK?'dark':'light'}.svg" alt="${ab}">`;
 const tm=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 const result=g=>PP.result(S,g),locked=g=>PP.started(S,g),mine=()=>me&&P[me];
 let joins=[];
@@ -201,7 +212,7 @@ function pickView(m){
     const oth=Object.keys(P).filter(id=>id!==me),nA=oth.filter(id=>P[id].picks[g.id]==='A').length,nH=oth.filter(id=>P[id].picks[g.id]==='H').length,pot=nA+nH+1;
     const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';const n=side==='A'?nA:nH;
       const sub=sc?'':`<span class="sub">${n+(k===side?1:0)} picked · wins +${PP.f1(pot/(n+1))}</span>`;
-      return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''} aria-pressed="${k===side}"><span class="tt"><i style="background:${TC[ab]}"></i>${side==='H'?'@ ':''}${ab}${sc?` <small>${pts}</small>`:''}</span>${sub}</button>`};
+      return `<button class="${c}" data-g="${g.id}" data-s="${side}" ${lk?'disabled':''} aria-pressed="${k===side}" aria-label="${ab}"><span class="tt">${lg(ab,'tl')}${sc?`<small>${pts}</small>`:''}</span>${sub}</button>`};
     const st=status(g);
     return `<div class="card">${st?`<div class="st"><span>${st}</span></div>`:''}<div class="row">${b('A',g.a,s?.as)}${b('H',g.h,s?.hs)}</div></div>`}).join('')+'<button class="primary done" data-tab="home">Done</button>';
 }
@@ -227,9 +238,11 @@ function homeView(m){
   $('main').innerHTML=`<div class="hero">${hero}</div>
     <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
     <div class="list"><div class="lh"><span></span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
-      return `<button class="p ${r.id===me?'mine':''} ${out?'out':''}" data-pl="${esc(r.id)}" aria-label="See ${esc(p.name)}'s picks"><span class="rk">${i+1}</span>${crest(t.m,t.kit,32)}
+      const strip=G.map(g=>{const k=p.picks[g.id],rs=result(g);if(!k)return '<span class="ps none"></span>';
+        return `<span class="ps ${rs?(rs===k?'hit':'miss'):''}">${lg(k==='H'?g.h:g.a,'')}</span>`}).join('');
+      return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}"><span class="rk">${i+1}</span>${crest(t.m,t.kit,32)}
         <span class="n"><b>${esc(p.name)}</b><small>${MASCOTS[t.m]}${r.b.length?' · '+r.b.map(k=>ICON[k]).join(''):''}</small></span>
-        <span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span></button>`}).join('')}</div>
+        <span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span><span class="strip">${strip}</span></div>`}).join('')}</div>
     ${E.length?`<div class="sec"><h2>Latest</h2></div><div class="list">${E.map(e=>`<div class="f"><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></div>`).join('')}</div>`:''}`;
 }
 function playerSheet(id){
@@ -280,7 +293,6 @@ document.addEventListener('click',async e=>{
   if(b.dataset.tab&&!mine()){const pv=ls.get('pp_prev');if(pv&&P[pv])save(pv);tab='home';render();scrollTo(0,0);return}
   if(b.dataset.tab){tab=b.dataset.tab;open=null;render();scrollTo(0,0);return}
   if(b.dataset.claim){save(b.dataset.claim);sheet=null;tab='home';render();scrollTo(0,0);return}
-  if(b.dataset.pl){sheet='pl:'+b.dataset.pl;renderSheet();return}
   if(x==='menu'){sheet='menu';renderSheet();return}
   if(x==='team'){sheet='team';renderSheet();return}
   if(x==='rules'){sheet='rules';renderSheet();return}

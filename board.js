@@ -1,6 +1,10 @@
 // Shareable standings image for the group text: same rows as the Standings tab.
 const Board=(()=>{
 const imgs={};
+function svgImg(key,url){return imgs[key]||(imgs[key]=fetch(url).then(r=>r.ok?r.text():Promise.reject()).then(t=>{
+  const vb=/viewBox="([\d.\s-]+)"/.exec(t);const [, , w, h]=(vb?vb[1]:'0 0 960 640').split(/\s+/).map(Number);
+  if(!/<svg[^>]*\swidth=/.test(t))t=t.replace('<svg ',`<svg width="${w}" height="${h}" `);
+  return new Promise(r=>{const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(t)})}).catch(()=>null))}
 function dataImg(key,svg){return imgs[key]||(imgs[key]=new Promise(r=>{const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)}))}
 function fit(c,t,w){if(c.measureText(t).width<=w)return t;while(t.length>1&&c.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'}
 const F=(wt,sz)=>`${wt} ${sz}px -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif`;
@@ -11,9 +15,10 @@ async function draw({P,S,O,me}){
   const ids=Object.keys(P),T=tally(P,S),win=simulate(P,S,O),AW=awards(P,S,T);
   const lead=Math.max(0,...ids.map(id=>T[id].pts));
   const rows=ids.map(id=>({id,p:P[id],...T[id],w:win[id]||0,t:teamOf(id,P[id]),b:AW[id]||[]})).sort((a,b)=>b.pts-a.pts||b.w-a.w||b.max-a.max);
-  const W=1080,HEAD=190,ROW=112,PAD=40,H=HEAD+Math.max(1,rows.length)*ROW+PAD;
+  const W=1080,HEAD=190,ROW=150,PAD=40,H=HEAD+Math.max(1,rows.length)*ROW+PAD;
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;const c=cv.getContext('2d');
   const C={};await Promise.all(rows.map(async r=>C[r.id]=await dataImg('C'+r.t.m+r.t.kit,crest(r.t.m,r.t.kit,128))));
+  const L={};await Promise.all([...new Set(G.flatMap(g=>[g.a,g.h]))].map(async ab=>L[ab]=await svgImg('L'+ab,'logos/'+ab+'_light.svg')));
   c.fillStyle='#f4f5f7';c.fillRect(0,0,W,H);
   c.fillStyle=INK;c.font=F(800,56);c.fillText('Puck Pool',56,92);
   const fin=G.filter(g=>result(S,g)).length,live=G.filter(g=>PP.isLive(S[g.id])).length;
@@ -31,6 +36,9 @@ async function draw({P,S,O,me}){
     c.font=F(700,36);c.fillStyle=out?MUTE:INK;
     c.fillText(fit(c,r.p.name,440),220,y+56);
     const ic=r.b.map(k=>ICON[k]).join('');c.font=F(500,26);c.fillStyle=MUTE;c.fillText(MASCOTS[r.t.m]+(ic?' · '+ic:''),220,y+90);
+    G.forEach((g,j)=>{const k=r.p.picks[g.id];if(!k)return;const x=126+j*62,yy=y+108,res=result(S,g),ab=k==='H'?g.h:g.a;
+      c.globalAlpha=res&&res!==k?.22:1;if(L[ab])c.drawImage(L[ab],x,yy,54,36);c.globalAlpha=1;
+      if(res===k){c.fillStyle='#16a34a';c.beginPath();c.arc(x+52,yy+34,8,0,7);c.fill();c.strokeStyle='#fff';c.lineWidth=3;c.stroke()}});
     c.textAlign='right';c.font=F(800,42);c.fillStyle=out?MUTE:INK;c.fillText(f1(r.pts),760,y+70);
     c.font=F(500,36);c.fillStyle=MUTE;c.fillText(f1(r.max),890,y+70);
     const pct=r.w>=.995&&r.w<1?'>99%':r.w>0&&r.w<.005?'<1%':Math.round(r.w*100)+'%';
