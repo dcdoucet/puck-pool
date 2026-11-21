@@ -1,0 +1,15 @@
+name: notify
+on:
+  push:
+    paths: [news.json]
+  workflow_dispatch:
+    inputs:
+      test:
+        default: "no"
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - run: python3 notify.py ${{ inputs.test == 'yes' && 'test' || '' }}
