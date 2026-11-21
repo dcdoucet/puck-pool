@@ -126,7 +126,8 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 .sx{display:flex;gap:3px;overflow:hidden;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding:4px 0}
 .sx::-webkit-scrollbar{display:none}
 .sx .ps{flex:none;width:24px;height:18px}.sx .ps img{height:18px}
-.f.nw{display:block;cursor:pointer}.f.nw.open{background:var(--accbg)}.f.nw b{display:block;font-size:16px;line-height:1.3;margin:2px 0 4px}.f.nw p{margin:0;color:var(--mute);font-size:15px;line-height:1.45}.nsh{font-size:15px;min-height:36px;margin-top:4px}
+.f.nw{display:block;cursor:pointer}.f.nw.open{background:var(--accbg)}.f.nw b{display:block;font-size:16px;line-height:1.3;margin:2px 0 4px}.f.nw p{margin:0;color:var(--mute);font-size:15px;line-height:1.45}.pin{background:var(--card);border-radius:14px;padding:12px 14px;margin:6px 0 0;box-shadow:0 0 0 2px var(--acc) inset}.pin b{display:block;font-size:17px;line-height:1.3;margin:4px 0}.pin p{margin:0;color:var(--mute);font-size:15px;line-height:1.45}.pinh{display:flex;justify-content:space-between;align-items:center}.x{font-size:24px;line-height:1;color:var(--mute);min-width:44px;min-height:36px;text-align:right}
+.nsh{font-size:15px;min-height:36px;margin-top:4px}
 .nk{font-size:12px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-300%);opacity:0;visibility:hidden;z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s,opacity .25s,visibility .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
@@ -154,7 +155,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const TOPIC='puckpool-614c7aa1d6ed',LIVE=TOPIC+'-live',NT='https://ntfy.sh/'+TOPIC;
 const ls={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}},del:k=>{try{localStorage.removeItem(k)}catch{}}};
 const TC={EDM:'#ff4c00',CAR:'#ce1126',CHI:'#cf0a2c',CGY:'#c8102e',BUF:'#0057b8',FLA:'#c8102e',PIT:'#fcb514',NSH:'#ffb81c',WSH:'#c8102e',BOS:'#ffb81c',CBJ:'#2a5fae',TOR:'#2f6fd8',PHI:'#f74902',MTL:'#af1e2d',LAK:'#a2aaad',OTT:'#c52032',NYI:'#f47d30',DET:'#ce1126',NJD:'#ce1126',STL:'#2f6fd8',VGK:'#b4975a',WPG:'#55a0e0',ANA:'#f47a38',UTA:'#6cace4',MIN:'#2e8b57',VAN:'#00843d',SEA:'#99d9d9',SJS:'#00a3ad'};
-let openNews=null,NEWS=[],ev=new Map(),P={},base={},liveS={},S={},O={},seenAt={},me=ls.get('pp_me'),tab=null,busy=false,loaded=false,lastFull=0,open=null,sheet=null,err='';
+let pinNews=null,openNews=null,NEWS=[],ev=new Map(),P={},base={},liveS={},S={},O={},seenAt={},me=ls.get('pp_me'),tab=null,busy=false,loaded=false,lastFull=0,open=null,sheet=null,err='';
 const save=id=>{me=id;ls.set('pp_me',id);ls.set('pp_prev',id)};
 const DARK=matchMedia('(prefers-color-scheme: dark)').matches;
 const lg=(ab,cls)=>`<img class="${cls}" src="logos/${ab}_${DARK?'dark':'light'}.svg" alt="${ab}">`;
@@ -260,8 +261,9 @@ function homeView(m){
   const byK={};for(const id in A)for(const k of A[id])(byK[k]=byK[k]||[]).push(id);
   const AE=Object.entries(byK).map(([k,ids])=>{const key=k+':'+ids.sort().join(',');if(!seenAw[key])seenAw[key]=Date.now();const ns=ids.map(id=>P[id].name);return {key,ts:seenAw[key],short:AWT[k](ns.length>1?ns.slice(0,-1).join(', ')+' & '+ns.at(-1):ns[0])}});
   ls.set('pp_aw',JSON.stringify(seenAw));
-  const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).concat(AE).concat(NEWS.map(n=>({key:n.id,ts:n.ts,news:n}))).sort((a,b)=>b.ts-a.ts).filter((e,i)=>i<5||(e.news&&e.news.id===openNews));
-  $('main').innerHTML=`<div class="hero">${hero}</div>
+  const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).concat(AE).concat(NEWS.map(n=>({key:n.id,ts:n.ts,news:n}))).sort((a,b)=>b.ts-a.ts).slice(0,5);
+  const pn=pinNews&&NEWS.find(x=>x.id===pinNews);
+  $('main').innerHTML=(pn?`<div class="pin"><div class="pinh"><span class="nk">Puck Pool Report · ${tm(pn.ts)}</span><button class="x" data-x="unpin" aria-label="Close">×</button></div><b>${esc(pn.h)}</b><p>${esc(pn.b)}</p><button class="lnk nsh" data-news="${esc(pn.id)}">Share</button></div>`:'')+`<div class="hero">${hero}</div>
     <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
     <div class="list sl"><div class="lh"><span></span><span class="pkh">Picks →</span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
       const strip=G.map(g=>{const k=p.picks[g.id],rs=result(g);if(!k)return '<span class="ps none"></span>';
@@ -345,6 +347,7 @@ document.addEventListener('click',async e=>{
     const txt=`🏒 ${n.h}\n${location.origin+location.pathname}#${n.id}`;
     try{if(navigator.share){await navigator.share({text:txt});return}}catch(err){if(err.name==='AbortError')return}
     try{await navigator.clipboard.writeText(txt);toast('Copied. Paste it in the group text')}catch{toast('Couldn’t copy')}return}
+  if(x==='unpin'){pinNews=null;try{history.replaceState(null,'',location.pathname)}catch{}render();return}
   if(x==='share'){share();return}
   if(x==='join'){tab='join';render();setTimeout(()=>$('nick')&&$('nick').focus(),50);return}
   if(x==='add'){if(me)ls.set('pp_prev',me);me=null;ls.del('pp_me');tab=null;sheet=null;render();setTimeout(()=>$('nick')&&$('nick').focus(),50);return}
@@ -357,10 +360,9 @@ document.addEventListener('click',async e=>{
     await act(()=>{P[me].picks[g.id]=side},{t:'p',p:me,g:g.id,s:side},'Saved ✓');return}
 });
 window.__shareCanvas=()=>Board.draw({P,S,O,me}).then(c=>c.toDataURL('image/jpeg',.9));
-const hashNews=()=>{const m=/^#(n\d+)$/.exec(location.hash);if(m){openNews=m[1];tab='home';sheet=null}};
-hashNews();addEventListener('hashchange',()=>{hashNews();render();scrollNews()});
-let scrolledNews=false;function scrollNews(){if(!openNews)return;const el=document.getElementById(openNews);if(el){el.scrollIntoView({block:'center'});scrolledNews=true}}
-load().then?.(()=>{if(!scrolledNews)setTimeout(scrollNews,300)});
+const hashNews=()=>{const m=/^#(n\d+)$/.exec(location.hash);if(m){pinNews=m[1];tab='home';sheet=null}};
+hashNews();addEventListener('hashchange',()=>{hashNews();render();scrollTo(0,0)});
+load();
 setInterval(()=>{if(!busy&&!document.hidden&&!sheet)load()},15000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy)load()});
 }
