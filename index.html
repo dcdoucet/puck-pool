@@ -2,6 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Puck Pool</title>
+<meta name="pp-v" content="1795292508">
 <meta property="og:title" content="Puck Pool">
 <meta property="og:description" content="Saturday NHL pick'em: live standings, odds and reports">
 <style>
@@ -249,11 +250,11 @@ function homeView(m){
   const n=m?G.filter(g=>m.picks[g.id]).length:0,fin=G.filter(result).length,live=G.filter(g=>PP.isLive(S[g.id])).length;
   const mi=rows.findIndex(r=>r.id===me),mr=rows[mi];
   // hero: one big number
-  let hero;
+  let hero;const rkOf=r=>1+rows.filter(x=>x.pts>r.pts+1e-9).length,tied=r=>rows.filter(x=>Math.abs(x.pts-r.pts)<1e-9).length>1;
   if(!m)hero=`<div class="big" id="cd">${Date.now()<FIRST?left():PP.f1(lead)}</div><div class="cap">${Date.now()<FIRST?'until picks start locking':'points to beat'}</div><button class="primary pill" data-x="join">Join the pool</button>`;
   else if(Date.now()<FIRST)hero=`<div class="big" id="cd">${left()}</div><div class="cap">until picks start locking</div>
     ${n<14?`<button class="primary pill" data-tab="pick">Make your picks · ${n}/14</button>`:`<div class="ok">✓ All 14 picked</div>`}`;
-  else hero=`<div class="big">${mr&&mr.max<lead-1e-9?'Out':'#'+(mi+1)}</div><div class="cap">${PP.f1(mr?mr.pts:0)} pts · ${pct(mr?mr.w:0)} to win · ${fin===14?'Final':live?live+' live':fin+'/14 final'}</div>`;
+  else hero=`<div class="big">${mr&&mr.max<lead-1e-9?'Out':(tied(mr)?'T-':'#')+rkOf(mr)}</div><div class="cap">${PP.f1(mr?mr.pts:0)} pts · ${pct(mr?mr.w:0)} to win · ${fin===14?'Final':live?live+' live':fin+'/14 final'}</div>`;
   if(m)hero+=`<div class="links">${n>=14||Date.now()>=FIRST?`<button class="lnk" data-tab="pick">${Date.now()>=FIRST?'Your picks':'Edit picks'}</button><span class="dim">·</span>`:''}<button class="lnk" data-x="rules">How it works</button></div>`;
   // awards go in the feed, stamped when this phone first saw them
   const AWT={fire:n=>`🔥 ${n} on fire: 3+ in a row`,fade:n=>`👑 Fade King: ${n}, cashed against the crowd`,sheep:n=>`🐑 Sheep: ${n}, went with the crowd`,bad:n=>`💀 Bad beat: ${n}, blew a 3rd-period lead`,round:n=>`🍺 ${n} buys the first round`};
@@ -267,7 +268,7 @@ function homeView(m){
     <div class="list sl"><div class="lh"><span></span><span class="pkh">Picks →</span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
       const strip=G.map(g=>{const k=p.picks[g.id],rs=result(g);if(!k)return '<span class="ps none"></span>';
         return `<span class="ps ${rs?(rs===k?'hit':'miss'):''}">${lg(k==='H'?g.h:g.a,'')}</span>`}).join('');
-      return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}" data-pl="${esc(r.id)}" role="button" tabindex="0" aria-label="${esc(p.name)}'s picks"><span class="rk">${i+1}</span>${crest(t.m,t.kit,22)}<span class="n">${esc(p.name)}</span>
+      return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}" data-pl="${esc(r.id)}" role="button" tabindex="0" aria-label="${esc(p.name)}'s picks"><span class="rk">${rkOf(r)}</span>${crest(t.m,t.kit,22)}<span class="n">${esc(p.name)}</span>
         <div class="sx">${strip}</div><span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span></div>`}).join('')}</div>
     ${E.length?`<div class="sec"><h2>Latest</h2></div><div class="list">${E.map(e=>e.news?`<div class="f nw ${openNews===e.news.id?'open':''}" id="${esc(e.news.id)}" data-nopen="${esc(e.news.id)}"><div><div class="nk">Puck Pool Report · ${tm(e.ts)}</div><b>${esc(e.news.h)}</b>${openNews===e.news.id?`<p>${esc(e.news.b)}</p><button class="lnk nsh" data-news="${esc(e.news.id)}">Share</button>`:''}</div></div>`:`<div class="f"><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></div>`).join('')}</div>`:''}`;
 }
@@ -360,6 +361,9 @@ document.addEventListener('click',async e=>{
 });
 window.__shareCanvas=()=>Board.draw({P,S,O,me}).then(c=>c.toDataURL('image/jpeg',.9));
 if(/^#n\d+$/.test(location.hash)){tab='home';try{history.replaceState(null,'',location.pathname)}catch{}}
+const MYV=document.querySelector('meta[name=pp-v]')?.content;
+async function checkVersion(){try{const t=await (await fetch('index.html?v='+Date.now(),{cache:'no-store'})).text();const m=/name="pp-v" content="(\d+)"/.exec(t);if(m&&MYV&&m[1]!==MYV&&!busy&&!sheet)location.reload()}catch{}}
+setInterval(checkVersion,120000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkVersion()});
 load();
 setInterval(()=>{if(!busy&&!document.hidden&&!sheet)load()},15000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy)load()});
