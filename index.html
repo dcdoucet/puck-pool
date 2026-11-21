@@ -262,8 +262,7 @@ function homeView(m){
   const AE=Object.entries(byK).map(([k,ids])=>{const key=k+':'+ids.sort().join(',');if(!seenAw[key])seenAw[key]=Date.now();const ns=ids.map(id=>P[id].name);return {key,ts:seenAw[key],short:AWT[k](ns.length>1?ns.slice(0,-1).join(', ')+' & '+ns.at(-1):ns[0])}});
   ls.set('pp_aw',JSON.stringify(seenAw));
   const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).concat(AE).concat(NEWS.map(n=>({key:n.id,ts:n.ts,news:n}))).sort((a,b)=>b.ts-a.ts).slice(0,5);
-  const pn=pinNews&&NEWS.find(x=>x.id===pinNews);
-  $('main').innerHTML=(pn?`<div class="pin"><div class="pinh"><span class="nk">Puck Pool Report · ${tm(pn.ts)}</span><button class="x" data-x="unpin" aria-label="Close">×</button></div><b>${esc(pn.h)}</b><p>${esc(pn.b)}</p><button class="lnk nsh" data-news="${esc(pn.id)}">Share</button></div>`:'')+`<div class="hero">${hero}</div>
+  $('main').innerHTML=`<div class="hero">${hero}</div>
     <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
     <div class="list sl"><div class="lh"><span></span><span class="pkh">Picks →</span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
       const strip=G.map(g=>{const k=p.picks[g.id],rs=result(g);if(!k)return '<span class="ps none"></span>';
@@ -344,7 +343,7 @@ document.addEventListener('click',async e=>{
   if(x==='out'){if(me)ls.set('pp_prev',me);sheet=null;me=null;ls.del('pp_me');tab=null;render();return}
   if(b.dataset.nopen){openNews=openNews===b.dataset.nopen?null:b.dataset.nopen;render();return}
   if(b.dataset.news){const n=NEWS.find(x=>x.id===b.dataset.news);if(!n)return;
-    const txt=`🏒 ${n.h}\n${location.origin+location.pathname}#${n.id}`;
+    const txt=`🏒 ${n.h}\n${location.origin+location.pathname}`;
     try{if(navigator.share){await navigator.share({text:txt});return}}catch(err){if(err.name==='AbortError')return}
     try{await navigator.clipboard.writeText(txt);toast('Copied. Paste it in the group text')}catch{toast('Couldn’t copy')}return}
   if(x==='unpin'){pinNews=null;try{history.replaceState(null,'',location.pathname)}catch{}render();return}
@@ -360,8 +359,7 @@ document.addEventListener('click',async e=>{
     await act(()=>{P[me].picks[g.id]=side},{t:'p',p:me,g:g.id,s:side},'Saved ✓');return}
 });
 window.__shareCanvas=()=>Board.draw({P,S,O,me}).then(c=>c.toDataURL('image/jpeg',.9));
-const hashNews=()=>{const m=/^#(n\d+)$/.exec(location.hash);if(m){pinNews=m[1];tab='home';sheet=null}};
-hashNews();addEventListener('hashchange',()=>{hashNews();render();scrollTo(0,0)});
+if(/^#n\d+$/.test(location.hash)){tab='home';try{history.replaceState(null,'',location.pathname)}catch{}}
 load();
 setInterval(()=>{if(!busy&&!document.hidden&&!sheet)load()},15000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy)load()});

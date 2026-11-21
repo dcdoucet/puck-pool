@@ -17,6 +17,6 @@ except Exception: prev = cur
 old = {n["id"] for n in prev}
 for n in cur:
     if n["id"] not in old:
-        link = f"{SITE}#{n['id']}"
+        link = SITE
         push("Puck Pool Report", f"🏒 {n['h']}\n{link}", link)
         print("pushed", n["id"], n["h"])
