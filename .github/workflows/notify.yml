@@ -6,10 +6,15 @@ on:
     inputs:
       test:
         default: "no"
+      ids:
+        default: ""
 jobs:
   push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 2 }
+        with: { fetch-depth: 0 }
       - run: python3 notify.py ${{ inputs.test == 'yes' && 'test' || '' }}
+        env:
+          BEFORE: ${{ github.event.before }}
+          IDS: ${{ inputs.ids }}

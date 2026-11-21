@@ -12,8 +12,12 @@ if len(sys.argv) > 1 and sys.argv[1] == "test":
     push("Puck Pool", "✅ Test: Puck Pool Reports will show up here.\n" + SITE, SITE); sys.exit()
 
 cur = json.load(open("news.json"))
-try: prev = json.loads(subprocess.run(["git", "show", "HEAD~1:news.json"], capture_output=True, text=True, check=True).stdout)
+import os
+force = os.environ.get("IDS", "").split()
+base = os.environ.get("BEFORE") or "HEAD~1"
+try: prev = json.loads(subprocess.run(["git", "show", f"{base}:news.json"], capture_output=True, text=True, check=True).stdout)
 except Exception: prev = cur
+prev = [n for n in prev if n["id"] not in force]
 old = {n["id"] for n in prev}
 for n in cur:
     if n["id"] not in old:
