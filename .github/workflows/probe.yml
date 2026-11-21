@@ -1,0 +1,9 @@
+name: probe
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sSI "https://dcdoucet.github.io/puck-pool/" | grep -iE "^(age|cache-control|last-modified|x-cache):"
+          echo "pin card in live page: $(curl -sS 'https://dcdoucet.github.io/puck-pool/?v='$RANDOM | grep -c 'class=\"pin\"')"
