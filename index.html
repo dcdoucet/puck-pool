@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Puck Pool</title>
-<meta name="pp-v" content="1795312061">
+<meta name="pp-v" content="1795312160">
 <meta property="og:title" content="Puck Pool">
 <meta property="og:description" content="Saturday NHL pick'em: live standings, odds and reports">
 <style>
@@ -132,12 +132,10 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 .nk{font-size:12px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em}
 .tip2{background:var(--accbg);border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:15px;line-height:1.4}
 .tick{overflow-x:auto;scrollbar-width:none;margin:0 -16px 12px;padding:2px 16px}.tick::-webkit-scrollbar{display:none}
-.tickr{display:flex;gap:8px;width:max-content;animation:tk linear infinite}
-.tick:active .tickr,.tick:hover .tickr,.tick.hold .tickr{animation-play-state:paused}
-@keyframes tk{to{transform:translateX(-50%)}}
+.tickr{display:flex;gap:8px;width:max-content}
+.tick{scroll-snap-type:x mandatory}.chip{scroll-snap-align:start;scroll-margin-left:16px}
 .chip{flex:none;background:var(--card);border-radius:999px;padding:8px 14px;font-size:14px;font-weight:600;white-space:nowrap}
 .chip em{font-style:normal;font-weight:500;color:var(--mute);margin-left:8px;font-size:12px}
-@media(prefers-reduced-motion:reduce){.tickr{animation:none}}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-300%);opacity:0;visibility:hidden;z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s,opacity .25s,visibility .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
@@ -224,7 +222,7 @@ function render(){
   $('hdr').innerHTML=m?`<button class="me" data-x="menu" aria-label="Menu">${crest(teamOf(me,m).m,teamOf(me,m).kit,32)}</button>`:'';
   if(!loaded){$('main').innerHTML=`<p class="mute">${err||'Loading…'}</p>`;return}
   if(!m){tab==='home'?homeView(null):joinView();renderSheet();return}
-  tab==='pick'?pickView(m):homeView(m);syncStrips();
+  tab==='pick'?pickView(m):homeView(m);syncStrips();keepTick();
   renderSheet();
 }
 function joinView(){
@@ -251,9 +249,7 @@ function tipHtml(m){
 function notesHtml(N){
   if(!N.length)return '';
   const chip=e=>`<span class="chip">${esc(e.short)}<em>${ago(e.ts)}</em></span>`;
-  const one=N.slice(0,12).map(chip).join('');
-  const dur=Math.max(20,N.slice(0,12).length*7);
-  return `<div class="tick"><div class="tickr" style="animation-duration:${dur}s">${one}${N.length>1?one:''}</div></div>`;
+  return `<div class="tick"><div class="tickr">${N.slice(0,12).map(chip).join('')}</div></div>`;
 }
 function pickView(m){
   
@@ -394,8 +390,14 @@ if(/^#n\d+$/.test(location.hash)){tab='home';try{history.replaceState(null,'',lo
 const MYV=document.querySelector('meta[name=pp-v]')?.content;
 async function checkVersion(){try{const t=await (await fetch('index.html?v='+Date.now(),{cache:'no-store'})).text();const m=/name="pp-v" content="(\d+)"/.exec(t);if(m&&MYV&&m[1]!==MYV&&!busy&&!sheet)location.reload()}catch{}}
 setInterval(checkVersion,120000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkVersion()});
-document.addEventListener('touchstart',e=>{const t=e.target.closest('.tick');if(t){t.classList.add('hold');clearTimeout(t._h)}},{passive:true});
-document.addEventListener('touchend',e=>{const t=e.target.closest('.tick');if(t){t._h=setTimeout(()=>t.classList.remove('hold'),4000)}},{passive:true});
+let tickI=0,tickHold=0;
+document.addEventListener('touchstart',e=>{if(e.target.closest('.tick'))tickHold=Date.now()+6000},{passive:true});
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+setInterval(()=>{const t=document.querySelector('.tick');if(!t||RM||Date.now()<tickHold||document.hidden)return;
+  const cs=t.querySelectorAll('.chip');if(cs.length<2)return;
+  if(t._i===undefined){const x=t.scrollLeft;t._i=[...cs].findIndex(c=>c.offsetLeft-16>=x-2);if(t._i<0)t._i=0}
+  tickI=t._i=(t._i+1)%cs.length;t.scrollTo({left:cs[tickI].offsetLeft-16,behavior:'smooth'})},3000);
+const keepTick=()=>{const t=document.querySelector('.tick');if(t){const cs=t.querySelectorAll('.chip');if(cs[tickI]){t.scrollLeft=cs[tickI].offsetLeft-16;t._i=tickI}}};
 load();
 setInterval(()=>{if(!busy&&!document.hidden&&!sheet)load()},15000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy)load()});
