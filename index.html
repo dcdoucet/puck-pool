@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Puck Pool</title>
-<meta name="pp-v" content="1795311562">
+<meta name="pp-v" content="1795312061">
 <meta property="og:title" content="Puck Pool">
 <meta property="og:description" content="Saturday NHL pick'em: live standings, odds and reports">
 <style>
@@ -131,6 +131,13 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 .nsh{font-size:15px;min-height:36px;margin-top:4px}
 .nk{font-size:12px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em}
 .tip2{background:var(--accbg);border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:15px;line-height:1.4}
+.tick{overflow-x:auto;scrollbar-width:none;margin:0 -16px 12px;padding:2px 16px}.tick::-webkit-scrollbar{display:none}
+.tickr{display:flex;gap:8px;width:max-content;animation:tk linear infinite}
+.tick:active .tickr,.tick:hover .tickr,.tick.hold .tickr{animation-play-state:paused}
+@keyframes tk{to{transform:translateX(-50%)}}
+.chip{flex:none;background:var(--card);border-radius:999px;padding:8px 14px;font-size:14px;font-weight:600;white-space:nowrap}
+.chip em{font-style:normal;font-weight:500;color:var(--mute);margin-left:8px;font-size:12px}
+@media(prefers-reduced-motion:reduce){.tickr{animation:none}}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-300%);opacity:0;visibility:hidden;z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s,opacity .25s,visibility .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
@@ -241,6 +248,13 @@ function tipHtml(m){
   else t=`💡 Your picks are already your best shot (${pc(base)} to win). Hold.`;
   tipCache={k:key,h:`<div class="tip2">${t}</div>`};return tipCache.h;
 }
+function notesHtml(N){
+  if(!N.length)return '';
+  const chip=e=>`<span class="chip">${esc(e.short)}<em>${ago(e.ts)}</em></span>`;
+  const one=N.slice(0,12).map(chip).join('');
+  const dur=Math.max(20,N.slice(0,12).length*7);
+  return `<div class="tick"><div class="tickr" style="animation-duration:${dur}s">${one}${N.length>1?one:''}</div></div>`;
+}
 function pickView(m){
   
   const n=G.filter(g=>m.picks[g.id]).length;
@@ -278,7 +292,6 @@ function homeView(m){
   const AE=Object.entries(byK).map(([k,ids])=>{const key=k+':'+ids.sort().join(',');if(!seenAw[key])seenAw[key]=Date.now();const ns=ids.map(id=>P[id].name);return {key,ts:seenAw[key],short:AWT[k](ns.length>1?ns.slice(0,-1).join(', ')+' & '+ns.at(-1):ns[0])}});
   ls.set('pp_aw',JSON.stringify(seenAw));
   const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).concat(AE).concat(NEWS.map(n=>({key:n.id,ts:n.ts,news:n}))).sort((a,b)=>b.ts-a.ts);
-  const Esh=feedAll?E:E.slice(0,8);
   $('main').innerHTML=`<div class="hero">${hero}</div>
     <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
     <div class="list sl"><div class="lh"><span></span><span class="pkh">Picks →</span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
@@ -286,7 +299,7 @@ function homeView(m){
         return `<span class="ps ${rs?(rs===k?'hit':'miss'):''}">${lg(k==='H'?g.h:g.a,'')}</span>`}).join('');
       return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}" data-pl="${esc(r.id)}" role="button" tabindex="0" aria-label="${esc(p.name)}'s picks"><span class="rk">${rkOf(r)}</span>${crest(t.m,t.kit,22)}<span class="n">${esc(p.name)}</span>
         <div class="sx">${strip}</div><span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span></div>`}).join('')}</div>
-    ${E.length?`<div class="sec"><h2>Latest</h2></div><div class="list">${Esh.map(e=>e.news?`<div class="f nw ${openNews===e.news.id?'open':''}" id="${esc(e.news.id)}" data-nopen="${esc(e.news.id)}"><div><div class="nk">Puck Pool Report · ${tm(e.ts)}</div><b>${esc(e.news.h)}</b>${openNews===e.news.id?`<p>${esc(e.news.b)}</p><button class="lnk nsh" data-news="${esc(e.news.id)}">Share</button>`:''}</div></div>`:`<div class="f"><span>${esc(e.short)}</span><time>${ago(e.ts)}</time></div>`).join('')}</div>${E.length>8&&!feedAll?`<button class="lnk" data-x="feedall" style="display:block;margin:6px auto 0">Show all ${E.length}</button>`:''}`:''}`;
+    ${E.length?`<div class="sec"><h2>Latest</h2></div>${notesHtml(E.filter(e=>!e.news))}${(()=>{const R=E.filter(e=>e.news),Rs=feedAll?R:R.slice(0,6);return R.length?`<div class="list">${Rs.map(e=>`<div class="f nw ${openNews===e.news.id?'open':''}" id="${esc(e.news.id)}" data-nopen="${esc(e.news.id)}"><div><div class="nk">Puck Pool Report · ${tm(e.ts)}</div><b>${esc(e.news.h)}</b>${openNews===e.news.id?`<p>${esc(e.news.b)}</p><button class="lnk nsh" data-news="${esc(e.news.id)}">Share</button>`:''}</div></div>`).join('')}</div>${R.length>6&&!feedAll?`<button class="lnk" data-x="feedall" style="display:block;margin:6px auto 0">Show all ${R.length} reports</button>`:''}`:''})()}`:''}`;
 }
 function playerSheet(id){
   const p=P[id];if(!p)return '';const t=teamOf(id,p),T=PP.tally(P,S)[id],self=id===me;
@@ -381,6 +394,8 @@ if(/^#n\d+$/.test(location.hash)){tab='home';try{history.replaceState(null,'',lo
 const MYV=document.querySelector('meta[name=pp-v]')?.content;
 async function checkVersion(){try{const t=await (await fetch('index.html?v='+Date.now(),{cache:'no-store'})).text();const m=/name="pp-v" content="(\d+)"/.exec(t);if(m&&MYV&&m[1]!==MYV&&!busy&&!sheet)location.reload()}catch{}}
 setInterval(checkVersion,120000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkVersion()});
+document.addEventListener('touchstart',e=>{const t=e.target.closest('.tick');if(t){t.classList.add('hold');clearTimeout(t._h)}},{passive:true});
+document.addEventListener('touchend',e=>{const t=e.target.closest('.tick');if(t){t._h=setTimeout(()=>t.classList.remove('hold'),4000)}},{passive:true});
 load();
 setInterval(()=>{if(!busy&&!document.hidden&&!sheet)load()},15000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy)load()});
