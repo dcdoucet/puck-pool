@@ -29,7 +29,6 @@ async function draw({P,S,O,me}){
   if(!rows.length){c.fillStyle=MUTE;c.font=F(500,34);c.fillText('No one yet.',80,y0+70)}
   rows.forEach((r,i)=>{
     const y=y0+i*ROW,out=r.max<lead-1e-9;
-    if(r.id===me){c.fillStyle='#e8efff';c.fillRect(32,y,W-64,ROW)}
     if(i){c.fillStyle=LINE;c.fillRect(52,y,W-104,2)}
     c.globalAlpha=out?.5:1;
     c.fillStyle=MUTE;c.font=F(700,30);c.textAlign='center';c.fillText(String(i+1),72,y+56);c.textAlign='left';
