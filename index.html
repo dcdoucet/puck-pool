@@ -130,6 +130,7 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 .f.nw{display:block;cursor:pointer}.f.nw.open{background:var(--accbg)}.f.nw b{display:block;font-size:16px;line-height:1.3;margin:2px 0 4px}.f.nw p{margin:0;color:var(--mute);font-size:15px;line-height:1.45}.pin{background:var(--card);border-radius:14px;padding:12px 14px;margin:6px 0 0;box-shadow:0 0 0 2px var(--acc) inset}.pin b{display:block;font-size:17px;line-height:1.3;margin:4px 0}.pin p{margin:0;color:var(--mute);font-size:15px;line-height:1.45}.pinh{display:flex;justify-content:space-between;align-items:center}.x{font-size:24px;line-height:1;color:var(--mute);min-width:44px;min-height:36px;text-align:right}
 .nsh{font-size:15px;min-height:36px;margin-top:4px}
 .nk{font-size:12px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em}
+.tip2{background:var(--accbg);border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:15px;line-height:1.4}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-300%);opacity:0;visibility:hidden;z-index:40;background:var(--ink);color:var(--bg);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:600;transition:transform .25s,opacity .25s,visibility .25s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
 .names button{display:block;width:100%;text-align:left;min-height:50px;border-bottom:1px solid var(--line)}
@@ -156,10 +157,11 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const TOPIC='puckpool-614c7aa1d6ed',LIVE=TOPIC+'-live',NT='https://ntfy.sh/'+TOPIC;
 const ls={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}},del:k=>{try{localStorage.removeItem(k)}catch{}}};
 const TC={EDM:'#ff4c00',CAR:'#ce1126',CHI:'#cf0a2c',CGY:'#c8102e',BUF:'#0057b8',FLA:'#c8102e',PIT:'#fcb514',NSH:'#ffb81c',WSH:'#c8102e',BOS:'#ffb81c',CBJ:'#2a5fae',TOR:'#2f6fd8',PHI:'#f74902',MTL:'#af1e2d',LAK:'#a2aaad',OTT:'#c52032',NYI:'#f47d30',DET:'#ce1126',NJD:'#ce1126',STL:'#2f6fd8',VGK:'#b4975a',WPG:'#55a0e0',ANA:'#f47a38',UTA:'#6cace4',MIN:'#2e8b57',VAN:'#00843d',SEA:'#99d9d9',SJS:'#00a3ad'};
-let pinNews=null,openNews=null,NEWS=[],ev=new Map(),P={},base={},liveS={},S={},O={},seenAt={},me=ls.get('pp_me'),tab=null,busy=false,loaded=false,lastFull=0,open=null,sheet=null,err='';
+let feedAll=false,pinNews=null,openNews=null,NEWS=[],ev=new Map(),P={},base={},liveS={},S={},O={},seenAt={},me=ls.get('pp_me'),tab=null,busy=false,loaded=false,lastFull=0,open=null,sheet=null,err='';
 const save=id=>{me=id;ls.set('pp_me',id);ls.set('pp_prev',id)};
 const DARK=matchMedia('(prefers-color-scheme: dark)').matches;
 const lg=(ab,cls)=>`<img class="${cls}" src="logos/${ab}_${DARK?'dark':'light'}.svg" alt="${ab}">`;
+const ago=t=>{const m=Math.max(0,Math.round((Date.now()-t)/60000));return m<1?'just now':m<60?m+' min ago':Math.floor(m/60)+' hr ago'};
 const tm=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 const result=g=>PP.result(S,g),locked=g=>PP.started(S,g),mine=()=>me&&P[me];
 let joins=[];
@@ -226,10 +228,23 @@ function joinView(){
     ${names.length?`<div class="sec"><h2>Or play as</h2></div><div class="chips">${names.map(([id,p])=>{const t=teamOf(id,p);return `<button data-claim="${esc(id)}">${crest(t.m,t.kit,26)}${esc(p.name)}</button>`}).join('')}</div>`:''}`;
 }
 function status(g){const s=S[g.id];if(PP.isFinal(s))return 'Final'+(s.period>4?' · SO':s.period>3?' · OT':'');if(PP.isLive(s))return `<b>Live</b> · ${PP.per(s.period)} ${esc(s.clock||'')}`;return locked(g)?'Locked':''}
+let tipCache={k:'',h:''};
+function tipHtml(m){
+  const open=G.filter(g=>!locked(g)&&m.picks[g.id]);if(!open.length||Object.keys(P).length<2)return '';
+  const key=JSON.stringify([P,Object.keys(S).map(k=>S[k].u),open.map(g=>g.id)]);if(tipCache.k===key)return tipCache.h;
+  const base=PP.simulate(P,S,O,3000)[me]||0;let best=null;
+  for(const g of open){const k=m.picks[g.id],nk=k==='H'?'A':'H';const P2={...P,[me]:{...m,picks:{...m.picks,[g.id]:nk}}};
+    const w=PP.simulate(P2,S,O,3000)[me]||0;if(!best||w>best.w)best={g,k,nk,w}}
+  const ab=(g,s)=>s==='H'?g.h:g.a,pc=w=>w>=.995?'>99%':w<.005&&w>0?'<1%':Math.round(w*100)+'%';
+  const ord=PP.rankOrder(P,S),pos=ord.indexOf(me)+1;
+  let t;if(best&&best.w>base+.01)t=`💡 You're ${pos===1?'in front':'#'+pos+' and chasing'}. Switching ${ab(best.g,best.k)} → ${ab(best.g,best.nk)} would move your win odds from ${pc(base)} to ${pc(best.w)}.`;
+  else t=`💡 Your picks are already your best shot (${pc(base)} to win). Hold.`;
+  tipCache={k:key,h:`<div class="tip2">${t}</div>`};return tipCache.h;
+}
 function pickView(m){
   
   const n=G.filter(g=>m.picks[g.id]).length;
-  $('main').innerHTML=`<div class="sec"><h2>Picks <span class="dim">${n}/14</span></h2></div>`+G.map(g=>{
+  $('main').innerHTML=`<div class="sec"><h2>Picks <span class="dim">${n}/14</span></h2></div>`+tipHtml(m)+G.map(g=>{
     const k=m.picks[g.id],lk=locked(g),r=result(g),s=S[g.id],sc=s&&(PP.isLive(s)||PP.isFinal(s));
     const oth=Object.keys(P).filter(id=>id!==me),nA=oth.filter(id=>P[id].picks[g.id]==='A').length,nH=oth.filter(id=>P[id].picks[g.id]==='H').length,pot=nA+nH+1;
     const b=(side,ab,pts)=>{let c='t';if(k===side)c+=r?(r===side?' w':' l'):' on';const n=side==='A'?nA:nH;
@@ -262,7 +277,8 @@ function homeView(m){
   const byK={};for(const id in A)for(const k of A[id])(byK[k]=byK[k]||[]).push(id);
   const AE=Object.entries(byK).map(([k,ids])=>{const key=k+':'+ids.sort().join(',');if(!seenAw[key])seenAw[key]=Date.now();const ns=ids.map(id=>P[id].name);return {key,ts:seenAw[key],short:AWT[k](ns.length>1?ns.slice(0,-1).join(', ')+' & '+ns.at(-1):ns[0])}});
   ls.set('pp_aw',JSON.stringify(seenAw));
-  const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).concat(AE).concat(NEWS.map(n=>({key:n.id,ts:n.ts,news:n}))).sort((a,b)=>b.ts-a.ts).slice(0,5);
+  const E=PP.feed(P,S,O,seenAt).filter(e=>['final','lead','out'].includes(e.kind)&&e.ts<=Date.now()+60000).concat(AE).concat(NEWS.map(n=>({key:n.id,ts:n.ts,news:n}))).sort((a,b)=>b.ts-a.ts);
+  const Esh=feedAll?E:E.slice(0,8);
   $('main').innerHTML=`<div class="hero">${hero}</div>
     <div class="sec"><h2>Standings <span class="dim">${ids.length}</span></h2><button class="lnk" data-x="share">Share</button></div>
     <div class="list sl"><div class="lh"><span></span><span class="pkh">Picks →</span><span>Pts</span><span>Max</span><span>Win</span></div>${rows.map((r,i)=>{const p=P[r.id],t=teamOf(r.id,p),out=r.max<lead-1e-9;
@@ -270,7 +286,7 @@ function homeView(m){
         return `<span class="ps ${rs?(rs===k?'hit':'miss'):''}">${lg(k==='H'?g.h:g.a,'')}</span>`}).join('');
       return `<div class="p ${r.id===me?'mine':''} ${out?'out':''}" data-pl="${esc(r.id)}" role="button" tabindex="0" aria-label="${esc(p.name)}'s picks"><span class="rk">${rkOf(r)}</span>${crest(t.m,t.kit,22)}<span class="n">${esc(p.name)}</span>
         <div class="sx">${strip}</div><span class="v">${PP.f1(r.pts)}</span><span class="v dim">${PP.f1(r.max)}</span><span class="v acc">${out?'Out':pct(r.w)}</span></div>`}).join('')}</div>
-    ${E.length?`<div class="sec"><h2>Latest</h2></div><div class="list">${E.map(e=>e.news?`<div class="f nw ${openNews===e.news.id?'open':''}" id="${esc(e.news.id)}" data-nopen="${esc(e.news.id)}"><div><div class="nk">Puck Pool Report · ${tm(e.ts)}</div><b>${esc(e.news.h)}</b>${openNews===e.news.id?`<p>${esc(e.news.b)}</p><button class="lnk nsh" data-news="${esc(e.news.id)}">Share</button>`:''}</div></div>`:`<div class="f"><span>${esc(e.short)}</span><time>${tm(e.ts)}</time></div>`).join('')}</div>`:''}`;
+    ${E.length?`<div class="sec"><h2>Latest</h2></div><div class="list">${Esh.map(e=>e.news?`<div class="f nw ${openNews===e.news.id?'open':''}" id="${esc(e.news.id)}" data-nopen="${esc(e.news.id)}"><div><div class="nk">Puck Pool Report · ${tm(e.ts)}</div><b>${esc(e.news.h)}</b>${openNews===e.news.id?`<p>${esc(e.news.b)}</p><button class="lnk nsh" data-news="${esc(e.news.id)}">Share</button>`:''}</div></div>`:`<div class="f"><span>${esc(e.short)}</span><time>${ago(e.ts)}</time></div>`).join('')}</div>${E.length>8&&!feedAll?`<button class="lnk" data-x="feedall" style="display:block;margin:6px auto 0">Show all ${E.length}</button>`:''}`:''}`;
 }
 function playerSheet(id){
   const p=P[id];if(!p)return '';const t=teamOf(id,p),T=PP.tally(P,S)[id],self=id===me;
@@ -347,6 +363,7 @@ document.addEventListener('click',async e=>{
     const txt=`🏒 ${n.h}\n${location.origin+location.pathname}`;
     try{if(navigator.share){await navigator.share({text:txt});return}}catch(err){if(err.name==='AbortError')return}
     try{await navigator.clipboard.writeText(txt);toast('Copied. Paste it in the group text')}catch{toast('Couldn’t copy')}return}
+  if(x==='feedall'){feedAll=true;render();return}
   if(x==='unpin'){pinNews=null;try{history.replaceState(null,'',location.pathname)}catch{}render();return}
   if(x==='share'){share();return}
   if(x==='join'){tab='join';render();setTimeout(()=>$('nick')&&$('nick').focus(),50);return}
