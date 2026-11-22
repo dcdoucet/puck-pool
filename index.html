@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Puck Pool</title>
-<meta name="pp-v" content="1795311541">
+<meta name="pp-v" content="1795311562">
 <meta property="og:title" content="Puck Pool">
 <meta property="og:description" content="Saturday NHL pick'em: live standings, odds and reports">
 <style>
@@ -236,8 +236,8 @@ function tipHtml(m){
   for(const g of open){const k=m.picks[g.id],nk=k==='H'?'A':'H';const P2={...P,[me]:{...m,picks:{...m.picks,[g.id]:nk}}};
     const w=PP.simulate(P2,S,O,3000)[me]||0;if(!best||w>best.w)best={g,k,nk,w}}
   const ab=(g,s)=>s==='H'?g.h:g.a,pc=w=>w>=.995?'>99%':w<.005&&w>0?'<1%':Math.round(w*100)+'%';
-  const ord=PP.rankOrder(P,S),pos=ord.indexOf(me)+1;
-  let t;if(best&&best.w>base+.01)t=`💡 You're ${pos===1?'in front':'#'+pos+' and chasing'}. Switching ${ab(best.g,best.k)} → ${ab(best.g,best.nk)} would move your win odds from ${pc(base)} to ${pc(best.w)}.`;
+  const T=PP.tally(P,S),mp=T[me].pts,ahead=Object.keys(P).filter(id=>T[id].pts>mp+1e-9).length,tie=Object.keys(P).filter(id=>Math.abs(T[id].pts-mp)<1e-9).length>1,pos=ahead+1,lab=(tie?'T-':'#')+pos;
+  let t;if(best&&best.w>base+.01)t=`💡 You're ${pos===1&&!tie?'in front':lab+(pos===1?'':' and chasing')}. Switching ${ab(best.g,best.k)} → ${ab(best.g,best.nk)} would move your win odds from ${pc(base)} to ${pc(best.w)}.`;
   else t=`💡 Your picks are already your best shot (${pc(base)} to win). Hold.`;
   tipCache={k:key,h:`<div class="tip2">${t}</div>`};return tipCache.h;
 }
@@ -328,7 +328,7 @@ function notify(){
   for(const e of E){if(seen.has(e.key)||e.ts>Date.now()+60000)continue;seen.add(e.key);
     const k=e.gid&&m.picks[e.gid];
     if(e.kind==='final'&&k)msgs.push(k===e.side?`✅ ${e.team} won · +${PP.f1(e.pts)} pts`:`❌ ${e.team} won · no points`);
-    if(e.kind==='lead'&&e.ids.includes(me))msgs.push('👑 You’re in 1st');
+    if(e.kind==='lead'&&e.ids.includes(me))msgs.push(e.ids.length>1?'👑 You’re tied for 1st':'👑 You’re in 1st');
     if(e.kind==='out'&&e.ids.includes(me))msgs.push('You’re out of contention');}
   ls.set('pp_seen',JSON.stringify([...seen].slice(-600)));
   msgs.slice(-3).forEach((t,i)=>setTimeout(()=>toast(t),i*2900));
