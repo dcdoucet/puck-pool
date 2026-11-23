@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Puck Pool</title>
-<meta name="pp-v" content="1795356771">
+<meta name="pp-v" content="1795433716">
 <meta property="og:title" content="Puck Pool">
 <meta property="og:description" content="Saturday NHL pick'em: live standings, odds and reports">
 <style>
@@ -159,6 +159,7 @@ details{margin-top:14px;font-size:14px;color:var(--mute)}summary{min-height:44px
 const {G,GI}=PP;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const FROZEN=true; // pool is over: read-only, no ntfy
 const TOPIC='puckpool-614c7aa1d6ed',LIVE=TOPIC+'-live',NT='https://ntfy.sh/'+TOPIC;
 const ls={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}},del:k=>{try{localStorage.removeItem(k)}catch{}}};
 const TC={EDM:'#ff4c00',CAR:'#ce1126',CHI:'#cf0a2c',CGY:'#c8102e',BUF:'#0057b8',FLA:'#c8102e',PIT:'#fcb514',NSH:'#ffb81c',WSH:'#c8102e',BOS:'#ffb81c',CBJ:'#2a5fae',TOR:'#2f6fd8',PHI:'#f74902',MTL:'#af1e2d',LAK:'#a2aaad',OTT:'#c52032',NYI:'#f47d30',DET:'#ce1126',NJD:'#ce1126',STL:'#2f6fd8',VGK:'#b4975a',WPG:'#55a0e0',ANA:'#f47a38',UTA:'#6cace4',MIN:'#2e8b57',VAN:'#00843d',SEA:'#99d9d9',SJS:'#00a3ad'};
@@ -199,7 +200,7 @@ async function load(){
   try{
     const t=Date.now(),full=t-lastFull>55000||!loaded;
     const [nt,arc,s,o,nw]=await Promise.all([
-      fetch(`https://ntfy.sh/${TOPIC},${LIVE}/json?poll=1&since=all`).then(r=>r.text()),
+      FROZEN?'':fetch(`https://ntfy.sh/${TOPIC},${LIVE}/json?poll=1&since=all`).then(r=>r.text()),
       full?fetch('picks.json?t='+t).then(r=>r.ok?r.json():[]).catch(()=>[]):null,
       full?fetch('scores.json?t='+t).then(r=>r.json()).catch(()=>null):null,
       full?fetch('odds.json?t='+t).then(r=>r.json()).catch(()=>null):null,
@@ -214,9 +215,10 @@ async function load(){
   }catch{err="Can't connect. Retrying…"}
   build();render();notify();
 }
-async function post(msg){const r=await fetch(NT,{method:'POST',body:JSON.stringify(msg)});if(!r.ok)throw 0;add(await r.json());build()}
+async function post(msg){if(FROZEN)throw 0;const r=await fetch(NT,{method:'POST',body:JSON.stringify(msg)});if(!r.ok)throw 0;add(await r.json());build()}
 let tt;function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2600)}
 function render(){
+  if(FROZEN){$('hdr').innerHTML='';if(!loaded){$('main').innerHTML=`<p class="mute">${err||'Loading…'}</p>`;return}tab='home';homeView(null);syncStrips();keepTick();renderSheet();return}
   const m=mine();
   if(loaded&&!tab)tab=m&&G.every(g=>locked(g)||m.picks[g.id])?'home':'pick';
   $('hdr').innerHTML=m?`<button class="me" data-x="menu" aria-label="Menu">${crest(teamOf(me,m).m,teamOf(me,m).kit,32)}</button>`:'';
@@ -276,7 +278,8 @@ function homeView(m){
   const mi=rows.findIndex(r=>r.id===me),mr=rows[mi];
   // hero: one big number
   let hero;const rkOf=r=>1+rows.filter(x=>x.pts>r.pts+1e-9).length,tied=r=>rows.filter(x=>Math.abs(x.pts-r.pts)<1e-9).length>1;
-  if(!m)hero=`<div class="big" id="cd">${Date.now()<FIRST?left():PP.f1(lead)}</div><div class="cap">${Date.now()<FIRST?'until picks start locking':'points to beat'}</div><button class="primary pill" data-x="join">Join the pool</button>`;
+  if(FROZEN){const w=rows.filter(x=>Math.abs(x.pts-lead)<1e-9);hero=`<div class="big">👑 ${w.map(x=>esc(P[x.id].name)).join(' & ')}</div><div class="cap">Final · ${PP.f1(lead)} pts · pool closed</div>`}
+  else if(!m)hero=`<div class="big" id="cd">${Date.now()<FIRST?left():PP.f1(lead)}</div><div class="cap">${Date.now()<FIRST?'until picks start locking':'points to beat'}</div><button class="primary pill" data-x="join">Join the pool</button>`;
   else if(Date.now()<FIRST)hero=`<div class="big" id="cd">${left()}</div><div class="cap">until picks start locking</div>
     ${n<14?`<button class="primary pill" data-tab="pick">Make your picks · ${n}/14</button>`:`<div class="ok">✓ All 14 picked</div>`}`;
   else hero=`<div class="big">${mr&&mr.max<lead-1e-9?'Out':(tied(mr)?'T-':'#')+rkOf(mr)}</div><div class="cap">${PP.f1(mr?mr.pts:0)} pts · ${pct(mr?mr.w:0)} to win · ${fin===14?'Final':live?live+' live':fin+'/14 final'}</div>`;
@@ -349,7 +352,7 @@ async function share(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='puck-pool.jpg';document.body.appendChild(a);a.click();a.remove();
 }
 document.addEventListener('submit',async e=>{
-  e.preventDefault();if(busy)return;const n=$('nick').value.trim().slice(0,16);if(!n)return;
+  e.preventDefault();if(FROZEN)return;if(busy)return;const n=$('nick').value.trim().slice(0,16);if(!n)return;
   busy=true;tab='pick';const id='p'+Math.random().toString(36).slice(2,10);save(id);
   try{await post({t:'j',p:id,n})}catch{toast('Couldn’t join. Try again.');me=null}busy=false;render();
 });
